@@ -5,7 +5,7 @@ import org.aueb.ds.model.Value;
 
 import java.util.ArrayList;
 
-public class Publisher extends Node {
+public class Publisher implements Node {
 
     public void addHashTag(String hashtag) {
 
@@ -34,7 +34,6 @@ public class Publisher extends Node {
      * @param value Data to push.
      */
     public void push(String topic, Value value) {
-
     }
 
     /**
@@ -55,5 +54,25 @@ public class Publisher extends Node {
 
     public ArrayList<Value> generateChunks(String i) {
         return null;
+    }
+
+    @Override
+    public ArrayList<Broker> getBrokers() {
+        return null;
+    }
+
+    @Override
+    public void connect() {
+
+    }
+
+    @Override
+    public void disconnect() {
+
+    }
+
+    @Override
+    public void updateNodes() {
+
     }
 }

@@ -4,7 +4,7 @@ import org.aueb.ds.model.Node;
 
 import java.util.ArrayList;
 
-public class Broker extends Node {
+public class Broker implements Node {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
@@ -34,6 +34,26 @@ public class Broker extends Node {
     }
 
     public void filterConsumers(String consumer) {
+
+    }
+
+    @Override
+    public ArrayList<Broker> getBrokers() {
+        return null;
+    }
+
+    @Override
+    public void connect() {
+
+    }
+
+    @Override
+    public void disconnect() {
+
+    }
+
+    @Override
+    public void updateNodes() {
 
     }
 }

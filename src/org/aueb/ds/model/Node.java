@@ -4,23 +4,15 @@ import org.aueb.ds.pubsub.Broker;
 
 import java.util.ArrayList;
 
-public class Node {
+public interface Node {
 
-    private ArrayList<Broker> brokers = new ArrayList<>();
+    ArrayList<Broker> brokers = new ArrayList<>();
 
-    public ArrayList<Broker> getBrokers() {
-        return brokers;
-    }
+    ArrayList<Broker> getBrokers();
 
-    public void connect() {
+    void connect();
 
-    }
+    void disconnect();
 
-    public void disconnect() {
-
-    }
-
-    public void updateNodes() {
-
-    }
+    void updateNodes();
 }

@@ -3,7 +3,9 @@ package org.aueb.ds.pubsub;
 import org.aueb.ds.model.Node;
 import org.aueb.ds.model.Value;
 
-public class Consumer extends Node {
+import java.util.ArrayList;
+
+public class Consumer implements Node {
 
     /**
      * Registers a consumer
@@ -19,6 +21,26 @@ public class Consumer extends Node {
     }
 
     public void playData(String topic, Value value) {
+
+    }
+
+    @Override
+    public ArrayList<Broker> getBrokers() {
+        return null;
+    }
+
+    @Override
+    public void connect() {
+
+    }
+
+    @Override
+    public void disconnect() {
+
+    }
+
+    @Override
+    public void updateNodes() {
 
     }
 }
