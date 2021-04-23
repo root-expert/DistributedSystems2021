@@ -1,20 +1,16 @@
 package org.aueb.ds.pubsub;
 
-import org.aueb.ds.model.Node;
+import org.aueb.ds.model.ChannelName;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.util.Hashing;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class Publisher implements Node {
+public class Publisher extends AppNode implements Runnable {
+
+    private ChannelName channelName;
     private ArrayList<Broker> brokers = new ArrayList<>();
-    private Socket socket;
-    ObjectInputStream in;
-    ObjectOutputStream out;
 
     public void addHashTag(String hashtag) {
 
@@ -80,32 +76,20 @@ public class Publisher implements Node {
     }
 
     @Override
-    public ArrayList<Broker> getBrokers() {
-        ArrayList<Broker> receivedBrokers = null;
-        try {
-            out.writeUTF("getBrokerList");
-            out.flush();
+    public Socket connect(String ip, int port) {
+        Socket socket = super.connect(ip, port);
 
-            receivedBrokers = (ArrayList<Broker>) in.readObject();
-            System.out.println("Received broker list!");
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return receivedBrokers;
-    }
-
-    @Override
-    public void connect() {
-
+        // send messages to broker
+        return null;
     }
 
     @Override
     public void disconnect() {
-
+        super.disconnect();
     }
 
     @Override
-    public void updateNodes() {
+    public void run() {
 
     }
 }

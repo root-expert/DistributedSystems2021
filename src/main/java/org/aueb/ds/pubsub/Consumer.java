@@ -1,11 +1,11 @@
 package org.aueb.ds.pubsub;
 
-import org.aueb.ds.model.Node;
 import org.aueb.ds.model.Value;
 
+import java.net.Socket;
 import java.util.ArrayList;
 
-public class Consumer implements Node {
+public class Consumer extends AppNode implements Runnable {
 
     /**
      * Registers a consumer
@@ -25,22 +25,20 @@ public class Consumer implements Node {
     }
 
     @Override
-    public ArrayList<Broker> getBrokers() {
+    public Socket connect(String ip, int port) {
+        Socket socket =  super.connect(ip, port);
+
+        // Send messages to broker
         return null;
     }
 
     @Override
-    public void connect() {
-
-    }
-
-    @Override
     public void disconnect() {
-
+        super.disconnect();
     }
 
     @Override
-    public void updateNodes() {
+    public void run() {
 
     }
 }

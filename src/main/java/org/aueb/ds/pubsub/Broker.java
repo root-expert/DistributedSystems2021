@@ -1,16 +1,16 @@
 package org.aueb.ds.pubsub;
 
-import org.aueb.ds.model.Node;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Broker implements Node, Serializable {
+public class Broker implements Serializable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
 
     protected String hash = null;
+    protected String ip = null;
+    protected int port;
 
     public void calculateKeys() {
 
@@ -37,26 +37,6 @@ public class Broker implements Node, Serializable {
     }
 
     public void filterConsumers(String consumer) {
-
-    }
-
-    @Override
-    public ArrayList<Broker> getBrokers() {
-        return null;
-    }
-
-    @Override
-    public void connect() {
-
-    }
-
-    @Override
-    public void disconnect() {
-
-    }
-
-    @Override
-    public void updateNodes() {
 
     }
 }
