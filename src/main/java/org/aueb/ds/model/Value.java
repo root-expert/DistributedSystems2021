@@ -1,6 +1,8 @@
 package org.aueb.ds.model;
 
-public class Value {
+import java.io.Serializable;
+
+public class Value implements Serializable {
 
     VideoFile videoFile;
 }

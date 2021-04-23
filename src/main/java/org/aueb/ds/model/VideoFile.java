@@ -1,8 +1,9 @@
 package org.aueb.ds.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class VideoFile {
+public class VideoFile implements Serializable {
 
     String videoName;
     String channelName;
