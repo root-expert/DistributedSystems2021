@@ -2,12 +2,15 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Node;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Broker implements Node {
+public class Broker implements Node, Serializable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
+
+    protected String hash = null;
 
     public void calculateKeys() {
 

@@ -2,10 +2,19 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Node;
 import org.aueb.ds.model.Value;
+import org.aueb.ds.util.Hashing;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class Publisher implements Node {
+    private ArrayList<Broker> brokers = new ArrayList<>();
+    private Socket socket;
+    ObjectInputStream in;
+    ObjectOutputStream out;
 
     public void addHashTag(String hashtag) {
 
@@ -25,7 +34,21 @@ public class Publisher implements Node {
      * @return The broker which is responsible for the specified topic.
      */
     public Broker hashTopic(String topic) {
-        return null;
+        Hashing hashing = new Hashing();
+
+        String hashedTopic = hashing.md5Hash(topic);
+
+        Broker selected = null;
+        for (Broker broker : brokers) {
+            switch (broker.hash.compareTo(hashedTopic)) {
+                case -1:
+                case 0:
+                    selected = broker;
+                    break;
+                case 1:
+            }
+        }
+        return selected;
     }
 
     /**
@@ -58,7 +81,17 @@ public class Publisher implements Node {
 
     @Override
     public ArrayList<Broker> getBrokers() {
-        return null;
+        ArrayList<Broker> receivedBrokers = null;
+        try {
+            out.writeUTF("getBrokerList");
+            out.flush();
+
+            receivedBrokers = (ArrayList<Broker>) in.readObject();
+            System.out.println("Received broker list!");
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return receivedBrokers;
     }
 
     @Override

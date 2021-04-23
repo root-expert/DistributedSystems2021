@@ -6,8 +6,6 @@ import java.util.ArrayList;
 
 public interface Node {
 
-    ArrayList<Broker> brokers = new ArrayList<>();
-
     ArrayList<Broker> getBrokers();
 
     void connect();
