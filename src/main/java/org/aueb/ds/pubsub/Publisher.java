@@ -1,16 +1,19 @@
 package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.ChannelName;
+import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.util.Hashing;
 
-import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class Publisher extends AppNode implements Runnable {
 
-    private ChannelName channelName;
-    private ArrayList<Broker> brokers = new ArrayList<>();
+    private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
+    private ArrayList<Broker> localBrokerList = new ArrayList<>();
+    private HashMap<Broker, Connection> brokerConnections = new HashMap<>();
 
     public void addHashTag(String hashtag) {
 
@@ -35,7 +38,8 @@ public class Publisher extends AppNode implements Runnable {
         String hashedTopic = hashing.md5Hash(topic);
 
         Broker selected = null;
-        for (Broker broker : brokers) {
+        for (Broker broker : localBrokerList) {
+            // TODO: Cover all cases
             switch (broker.hash.compareTo(hashedTopic)) {
                 case -1:
                 case 0:
@@ -65,27 +69,48 @@ public class Publisher extends AppNode implements Runnable {
 
     /**
      * Notifies the Broker about new content (hashtag)
+     *
      * @param hashtag The hashtag to be notified.
      */
     public void notifyBrokersForHashTags(String hashtag) {
 
     }
 
-    public ArrayList<Value> generateChunks(String i) {
+    /**
+     * Generate chunks of a Video file.
+     * It extracts Video's metadata using the Apache Tika Library
+     * @param filename The filename to open.
+     * @return An ArrayList with all the chunks.
+     */
+    public ArrayList<Value> generateChunks(String filename) {
+        return null;
+    }
+
+    /**
+     * Opens a connections to the specified IP and port
+     * and sends registration messages.
+     * @param ip The IP to open the connection.
+     * @param port The port to open the connection.
+     * @return A Connection object.
+     */
+    @Override
+    public Connection connect(String ip, int port) {
+        Connection connection = super.connect(ip, port);
+
+        /* Send messages to broker
+         * Receive serialized Broker object
+         * Create Connection object and append it to the brokerConnections HashMap
+         */
         return null;
     }
 
     @Override
-    public Socket connect(String ip, int port) {
-        Socket socket = super.connect(ip, port);
-
-        // send messages to broker
-        return null;
-    }
-
-    @Override
-    public void disconnect() {
-        super.disconnect();
+    public void disconnect(Connection connection) {
+        /* Send disconnection messages to broker
+         * Call the super method to close the streams etc.
+         * Remove it from the HashMap
+         */
+        super.disconnect(connection);
     }
 
     @Override

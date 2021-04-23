@@ -1,5 +1,6 @@
 package org.aueb.ds.pubsub;
 
+import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public class AppNode implements Node {
     }
 
     @Override
-    public Socket connect(String ip, int port) {
+    public Connection connect(String ip, int port) {
         Socket socket = null;
 
         try {
@@ -55,11 +56,11 @@ public class AppNode implements Node {
             e.printStackTrace();
         }
 
-        return socket;
+        return new Connection(socket);
     }
 
     @Override
-    public void disconnect() {
+    public void disconnect(Connection connection) {
 
     }
 

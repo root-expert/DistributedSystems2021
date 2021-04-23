@@ -1,9 +1,7 @@
 package org.aueb.ds.pubsub;
 
+import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
-
-import java.net.Socket;
-import java.util.ArrayList;
 
 public class Consumer extends AppNode implements Runnable {
 
@@ -25,16 +23,16 @@ public class Consumer extends AppNode implements Runnable {
     }
 
     @Override
-    public Socket connect(String ip, int port) {
-        Socket socket =  super.connect(ip, port);
+    public Connection connect(String ip, int port) {
+        Connection connection =  super.connect(ip, port);
 
         // Send messages to broker
         return null;
     }
 
     @Override
-    public void disconnect() {
-        super.disconnect();
+    public void disconnect(Connection connection) {
+        super.disconnect(connection);
     }
 
     @Override
