@@ -15,29 +15,21 @@ public class AppNode implements Node {
 
     @Override
     public void init(String ip, int port) {
-        Socket socket = null;
-        ObjectInputStream in = null;
-        ObjectOutputStream out = null;
+        Connection connection = connect(ip, port);
+
         try {
-            socket = new Socket(ip, port);
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
 
-            out.writeUTF("getBrokerList");
-            out.flush();
+            connection.out.writeUTF("getBrokerList");
+            connection.out.flush();
 
-            brokers = (ArrayList<Broker>) in.readObject();
+            brokers = (ArrayList<Broker>) connection.in.readObject();
             System.out.println("Received broker list");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            try {
-                if (out != null) out.close();
-                if (in != null) in.close();
-                if (socket != null) socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            disconnect(connection);
         }
     }
 
