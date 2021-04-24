@@ -6,13 +6,13 @@ import java.util.ArrayList;
 
 public interface Node {
 
-    ArrayList<Broker> brokers = new ArrayList<>();
+    void init(String ip, int port);
 
     ArrayList<Broker> getBrokers();
 
-    void connect();
+    Connection connect(String ip, int port);
 
-    void disconnect();
+    void disconnect(Connection connection);
 
     void updateNodes();
 }

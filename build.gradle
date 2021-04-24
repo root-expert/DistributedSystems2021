@@ -1,0 +1,24 @@
+plugins {
+    id 'java'
+}
+
+group 'org.aueb.ds'
+version '1.0-SNAPSHOT'
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.aueb.ds.App'
+        )
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation group: 'org.apache.tika', name: 'tika-core', version: '1.4'
+
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+}
