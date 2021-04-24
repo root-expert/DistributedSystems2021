@@ -15,7 +15,7 @@ public class AppNode implements Node {
 
     protected String ip;
     protected int port;
-    protected final int BROKER_PORT = 23456;
+    protected final int BROKER_PORT = 24568;
 
     @Override
     public void init(String ip, int port) {
