@@ -3,10 +3,15 @@ package org.aueb.ds.pubsub;
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 
-public class Broker implements Node, Serializable {
+public class Broker implements Node, Serializable, Runnable {
+
+    private static final int PORT = 24568;
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
@@ -66,5 +71,35 @@ public class Broker implements Node, Serializable {
     @Override
     public void updateNodes() {
 
+    }
+
+    @Override
+    public void run() {
+        try {
+            ServerSocket serverSocket = new ServerSocket(PORT);
+
+            while (true) {
+                Socket socket = serverSocket.accept();
+                Thread handler = new Thread(new Handler(socket, this));
+                handler.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static class Handler implements Runnable {
+        private Socket socket;
+        private Broker broker;
+
+        public Handler(Socket socket, Broker broker) {
+            this.socket = socket;
+            this.broker = broker;
+        }
+
+        @Override
+        public void run() {
+            // Handle Broker, Publisher, Consumer requests
+        }
     }
 }

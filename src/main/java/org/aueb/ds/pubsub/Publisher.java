@@ -5,11 +5,16 @@ import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.util.Hashing;
 
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
 public class Publisher extends AppNode implements Runnable {
+
+    private static final int PORT = 23456;
 
     private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
     private ArrayList<Broker> localBrokerList = new ArrayList<>();
@@ -115,6 +120,31 @@ public class Publisher extends AppNode implements Runnable {
 
     @Override
     public void run() {
+        try {
+            ServerSocket serverSocket = new ServerSocket(PORT);
 
+            while (true) {
+                Socket socket = serverSocket.accept();
+                Thread handler = new Thread(new Handler(socket, this));
+                handler.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static class Handler implements Runnable {
+        private Socket socket;
+        private Publisher publisher;
+
+        public Handler(Socket socket, Publisher publisher) {
+            this.socket = socket;
+            this.publisher = publisher;
+        }
+
+        @Override
+        public void run() {
+            // Handle Broker requests
+        }
     }
 }
