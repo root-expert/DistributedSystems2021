@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class AppNode implements Node {
     
-    private ArrayList<Broker> brokers = new ArrayList<>();
+    private static ArrayList<Broker> brokers = new ArrayList<>();
 
     @Override
     public void init(String ip, int port) {
