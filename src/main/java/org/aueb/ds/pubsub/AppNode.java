@@ -11,28 +11,15 @@ import java.util.ArrayList;
 
 public class AppNode implements Node {
 
-    protected String ip;
-    protected final int PORT = 23456;
     private static ArrayList<Broker> brokers = new ArrayList<>();
+
+    protected String ip;
+    protected int port;
+    protected final int BROKER_PORT = 23456;
 
     @Override
     public void init(String ip, int port) {
-        Connection connection = connect(ip, port);
 
-        try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
-            connection.out.writeUTF("getBrokerList");
-            connection.out.flush();
-
-            brokers = (ArrayList<Broker>) connection.in.readObject();
-            System.out.println("Received broker list");
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            disconnect(connection);
-        }
     }
 
     @Override
@@ -40,22 +27,36 @@ public class AppNode implements Node {
         return brokers;
     }
 
+    public void setBrokers(ArrayList<Broker> brokers) {
+        AppNode.brokers = brokers;
+    }
+
     @Override
     public Connection connect(String ip, int port) {
         Socket socket = null;
+        ObjectInputStream in = null;
+        ObjectOutputStream out = null;
 
         try {
             socket = new Socket(ip, port);
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return new Connection(socket);
+        return new Connection(socket, in, out);
     }
 
     @Override
     public void disconnect(Connection connection) {
-
+        try {
+            connection.in.close();
+            connection.out.close();
+            connection.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

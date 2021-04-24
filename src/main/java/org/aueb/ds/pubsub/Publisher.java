@@ -14,7 +14,6 @@ import java.util.UUID;
 public class Publisher extends AppNode implements Runnable {
 
     private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
-    private ArrayList<Broker> localBrokerList = new ArrayList<>();
 
     public void addHashTag(String hashtag) {
 
@@ -38,8 +37,9 @@ public class Publisher extends AppNode implements Runnable {
 
         String hashedTopic = hashing.md5Hash(topic);
 
+        ArrayList<Broker> brokers = this.getBrokers();
         Broker selected = null;
-        for (Broker broker : localBrokerList) {
+        for (Broker broker : brokers) {
             // TODO: Cover all cases
             switch (broker.hash.compareTo(hashedTopic)) {
                 case -1:
@@ -117,7 +117,7 @@ public class Publisher extends AppNode implements Runnable {
     @Override
     public void run() {
         try {
-            ServerSocket serverSocket = new ServerSocket(PORT);
+            ServerSocket serverSocket = new ServerSocket(port);
 
             while (true) {
                 Socket socket = serverSocket.accept();
