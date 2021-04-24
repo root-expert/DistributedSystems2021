@@ -10,7 +10,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class AppNode implements Node {
-    
+
+    protected String ip;
+    protected final int PORT = 23456;
     private static ArrayList<Broker> brokers = new ArrayList<>();
 
     @Override

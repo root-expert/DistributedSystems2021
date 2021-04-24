@@ -9,16 +9,12 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.UUID;
 
 public class Publisher extends AppNode implements Runnable {
 
-    private static final int PORT = 23456;
-
     private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
     private ArrayList<Broker> localBrokerList = new ArrayList<>();
-    private HashMap<Broker, Connection> brokerConnections = new HashMap<>();
 
     public void addHashTag(String hashtag) {
 
@@ -77,13 +73,14 @@ public class Publisher extends AppNode implements Runnable {
      *
      * @param hashtag The hashtag to be notified.
      */
-    public void notifyBrokersForHashTags(String hashtag) {
+    public void notifyBrokersForHashTags(String hashtag, boolean add) {
 
     }
 
     /**
      * Generate chunks of a Video file.
-     * It extracts Video's metadata using the Apache Tika Library
+     * It extracts Video's metadata using the Apache Tika Library.
+     *
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
@@ -104,9 +101,8 @@ public class Publisher extends AppNode implements Runnable {
 
         /* Send messages to broker
          * Receive serialized Broker object
-         * Create Connection object and append it to the brokerConnections HashMap
          */
-        return null;
+        return connection;
     }
 
     @Override

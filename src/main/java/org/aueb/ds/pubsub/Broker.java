@@ -11,14 +11,12 @@ import java.util.ArrayList;
 
 public class Broker implements Node, Serializable, Runnable {
 
-    private static final int PORT = 24568;
-
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
 
     protected String hash = null;
     protected String ip = null;
-    protected int port;
+    protected final int PORT = 24568;
 
     public void calculateKeys() {
 
