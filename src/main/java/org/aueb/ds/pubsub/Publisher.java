@@ -103,7 +103,7 @@ public class Publisher extends AppNode implements Runnable {
     @Override
     public Connection connect(String ip, int port) {
         Connection connection = super.connect(ip, port);
-
+        connection.out=new ObjectOutputStream(connection.socket.);
         /* Send messages to broker
          * Receive serialized Broker object
          */
@@ -145,7 +145,7 @@ public class Publisher extends AppNode implements Runnable {
 
         @Override
         public void run() {
-            // Handle Broker requests
+            
         }
     }
 }
