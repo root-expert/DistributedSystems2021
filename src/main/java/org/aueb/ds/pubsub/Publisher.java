@@ -3,6 +3,7 @@ package org.aueb.ds.pubsub;
 import org.aueb.ds.model.ChannelName;
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
+import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.util.Hashing;
 
 import java.io.IOException;
@@ -14,6 +15,10 @@ import java.util.UUID;
 public class Publisher extends AppNode implements Runnable {
 
     private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
+
+    public Publisher(AppNodeConfig conf) {
+        super(conf);
+    }
 
     public void addHashTag(String hashtag) {
 
@@ -117,7 +122,7 @@ public class Publisher extends AppNode implements Runnable {
     @Override
     public void run() {
         try {
-            ServerSocket serverSocket = new ServerSocket(port);
+            ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
 
             while (true) {
                 Socket socket = serverSocket.accept();

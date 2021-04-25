@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'java-library'
 }
 
 group 'org.aueb.ds'
@@ -11,6 +12,10 @@ jar {
                 'Main-Class': 'org.aueb.ds.App'
         )
     }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
 }
 
 repositories {
@@ -19,6 +24,8 @@ repositories {
 
 dependencies {
     implementation group: 'org.apache.tika', name: 'tika-core', version: '1.4'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.3'
+    implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.12.3'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
