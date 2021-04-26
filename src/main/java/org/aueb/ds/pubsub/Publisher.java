@@ -24,9 +24,6 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class Publisher extends AppNode implements Runnable {
-    public static void main(String[] args) {
-        System.out.println("Hello");
-    }
 
     private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
 
