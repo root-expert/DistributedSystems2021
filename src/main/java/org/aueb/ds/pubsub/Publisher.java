@@ -235,8 +235,45 @@ public class Publisher extends AppNode implements Runnable {
                 ObjectInputStream in =new ObjectInputStream(this.socket.getInputStream());//Initialising input and output streams
                 String action=in.readUTF();//recieving an action string from the broker
                 if (action.equals("push")){//if the requested action is a pull action
-                    String topic=in.readUTF();
-                    //TODO push
+                    String topic=in.readUTF();//read the topic
+                    ChannelName cn=publisher.channelName;
+                    if (topic.charAt(0)=='#'){//if it is a hashtag
+                        // topic=topic.substring(1);//remove it in order to search in the hashmap
+                        ArrayList<String> toSend=new ArrayList<String>();//filenames to push
+                        for (String filename:cn.userVideoFilesMap.keySet()){//for every hashtag in the user's videos
+                            Value sample=cn.userVideoFilesMap.get(filename).get(0);//Search for the hashtag in the hashtags that concern this video
+                            for(String hashtag:sample.videoFile.associatedHashtags){
+                                if (hashtag.equals(topic)){//If the required hashtag is found then we add the video name in the list of videos to push
+                                    toSend.add(filename);
+                                    break;
+                                }
+                            }
+                        }
+                        if(toSend.isEmpty()){//if no videos of the required topic are found, send -1 as an error code
+                            out.writeInt(-1);
+                        }else{
+                            for (String filename:toSend){//Push every chunk of the video
+                                for (Value chunk:cn.userVideoFilesMap.get(filename)){
+                                    publisher.push(topic,chunk);
+                                }
+                            }
+                        }
+                        //search hastags
+                    }else{
+                        if(cn.channelName.equals(topic)){//if it's a channel name, every video of the publisher is pushed
+                            if (cn.userVideoFilesMap.isEmpty()) {
+                                for (String filename:cn.userVideoFilesMap.keySet()){
+                                    for(Value videoChunk :cn.userVideoFilesMap.get(filename)){
+                                        publisher.push(topic,videoChunk);
+                                    }                               
+                                }
+                            } else {
+                                out.writeInt(-1);//Error code if the channel doesn't have any videos
+                            }
+                        }else{
+                            out.writeInt(-1); //Error code if the channel name is not this Publisher's   
+                        }
+                    }
                     // try{//for Push
                     //     ArrayList<Value> videoChuncked=publisher.generateChunks(filename);
                     //     int length=videoChuncked.size();

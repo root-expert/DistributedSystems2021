@@ -12,7 +12,7 @@ public class VideoFile implements Serializable {
     String framerate;
     String frameWidth;
     String frameHeight;
-    ArrayList<String> associatedHashtags;
+    public ArrayList<String> associatedHashtags;
     public byte[] videoFileChunk;
 
 }
