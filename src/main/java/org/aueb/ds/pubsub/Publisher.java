@@ -1,12 +1,22 @@
 package org.aueb.ds.pubsub;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.aueb.ds.model.ChannelName;
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.util.Hashing;
+import org.xml.sax.ContentHandler;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -89,8 +99,47 @@ public class Publisher extends AppNode implements Runnable {
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
-    public ArrayList<Value> generateChunks(String filename) {
-        return null;
+    public ArrayList<Value> generateChunks(String filename) throws Exception {
+        //TODO Metadata 
+        ArrayList<Value> video=null;
+        if (channelName.userVideoFilesMap.containsKey(filename)){
+            video=channelName.userVideoFilesMap.get(filename);
+        }else{
+            ParseContext context=new ParseContext();
+            ContentHandler han=new BodyContentHandler();
+            Metadata data=new Metadata();
+            FileInputStream stream=new FileInputStream(new File(filename));
+            Parser parser=new AutoDetectParser();
+            parser.parse(stream, han, data, context);
+            //TODO fill in metadata
+            byte[] fullvideo=stream.readAllBytes();
+            int len=fullvideo.length;
+            int bins=Math.floorDiv(len, 10*1024);
+            video=new ArrayList<Value>();
+            Value videoChunk=new Value();
+            byte[] chunk=null;
+            for(int currentbin=0;currentbin<bins;currentbin++){
+                chunk=new byte[100240];
+                for (int cByte=0;cByte<100240;cByte++){
+                    chunk[cByte]=fullvideo[cByte+currentbin*10240];
+                }
+                //TODO fill in Value metadata
+                videoChunk.videoFile.videoFileChunk=chunk;
+                video.add(videoChunk);
+                videoChunk=new Value();
+            }
+            int remanining=len-(bins*10240);
+            chunk=new byte[remanining];
+            for (int cByte=0;cByte<remanining;cByte++){
+                chunk[cByte]=fullvideo[bins*10240+cByte];
+            }
+            //TODO fill in Value metadata
+            videoChunk.videoFile.videoFileChunk=chunk;
+            video.add(videoChunk);
+            fullvideo=null;
+            channelName.userVideoFilesMap.put(filename,video);
+        }
+        return video;
     }
 
     /**
@@ -115,9 +164,6 @@ public class Publisher extends AppNode implements Runnable {
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
-        /* Send messages to broker
-         * Receive serialized Broker object
-         */
         return connection;
     }
 
@@ -165,7 +211,31 @@ public class Publisher extends AppNode implements Runnable {
 
         @Override
         public void run() {
-            
+            try {
+                ObjectOutputStream out=new ObjectOutputStream(this.socket.getOutputStream());
+                ObjectInputStream in =new ObjectInputStream(this.socket.getInputStream());
+                String action=in.readUTF();
+                if (action.equals("pull")){
+                    String filename=in.readUTF();
+                    try{
+                        ArrayList<Value> videoChuncked=publisher.generateChunks(filename);
+                        int length=videoChuncked.size();
+                        out.writeInt(length);
+                        for (Value i:videoChuncked){
+                            out.writeObject(i);
+                        }
+                        String received=in.readUTF();
+                        if (!received.equals("complete"));
+                            throw new Exception("Error incomplete send");
+                    }catch(Exception e){
+                        //TODO: handle exception
+                    }
+                }else if(action.equals("notify")) {
+                    String receive=in.readUTF();
+                }
+            } catch (IOException io) {
+                //TODO: handle exception
+            }
             
         }
     }

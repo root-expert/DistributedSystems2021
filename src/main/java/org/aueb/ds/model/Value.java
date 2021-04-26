@@ -4,5 +4,5 @@ import java.io.Serializable;
 
 public class Value implements Serializable {
 
-    VideoFile videoFile;
+    public VideoFile videoFile;
 }
