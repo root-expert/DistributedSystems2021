@@ -102,42 +102,44 @@ public class Publisher extends AppNode implements Runnable {
     public ArrayList<Value> generateChunks(String filename) throws Exception {
         //TODO Metadata 
         ArrayList<Value> video=null;
-        if (channelName.userVideoFilesMap.containsKey(filename)){
+        if (channelName.userVideoFilesMap.containsKey(filename)){//if the video is already contained in the channel name's video hashmap then it is already chunked
             video=channelName.userVideoFilesMap.get(filename);
-        }else{
-            ParseContext context=new ParseContext();
-            ContentHandler han=new BodyContentHandler();
-            Metadata data=new Metadata();
-            FileInputStream stream=new FileInputStream(new File(filename));
+        }else{//if not we parse the video from scratch
+            ParseContext context=new ParseContext();//Tika's contect parser
+            ContentHandler han=new BodyContentHandler();//
+            Metadata data=new Metadata();//The metadata object to ectract the Value classs' attributes
+            FileInputStream stream=new FileInputStream(new File(filename));//The byte stream to read the .mp4 file
             Parser parser=new AutoDetectParser();
-            parser.parse(stream, han, data, context);
-            //TODO fill in metadata
-            byte[] fullvideo=stream.readAllBytes();
+            parser.parse(stream, han, data, context);//Parsing the data
+            //TODO fill in metadata using the metadata object
+            byte[] fullvideo=stream.readAllBytes();//Exctract all bytes from the .mp4 file
             int len=fullvideo.length;
-            int bins=Math.floorDiv(len, 10*1024);
+            int bins=Math.floorDiv(len, 10*1024);//calculate the number of 10KB full bins
             video=new ArrayList<Value>();
             Value videoChunk=new Value();
-            byte[] chunk=null;
-            for(int currentbin=0;currentbin<bins;currentbin++){
+            byte[] chunk=null;//initialising the cunck arraylist as well as the temporary variables to construct the videofile objects in
+            for(int currentbin=0;currentbin<bins;currentbin++){//Fill each new Value with the corresponding part of the full video array
                 chunk=new byte[100240];
                 for (int cByte=0;cByte<100240;cByte++){
-                    chunk[cByte]=fullvideo[cByte+currentbin*10240];
+                    chunk[cByte]=fullvideo[cByte+currentbin*10240];//Map the correct interval of the full video array to copy to the chunk
+                }
+                //TODO fill in Value metadata
+                videoChunk.videoFile.videoFileChunk=chunk;//Create the Value objects and add them to the video ArrayList
+                video.add(videoChunk);
+                videoChunk=new Value();
+            }
+            int remanining=len-(bins*10240);//Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes to house them, and follow the same procedure 
+            if (remanining!=0){
+                chunk=new byte[remanining];
+                for (int cByte=0;cByte<remanining;cByte++){
+                    chunk[cByte]=fullvideo[bins*10240+cByte];
                 }
                 //TODO fill in Value metadata
                 videoChunk.videoFile.videoFileChunk=chunk;
                 video.add(videoChunk);
-                videoChunk=new Value();
             }
-            int remanining=len-(bins*10240);
-            chunk=new byte[remanining];
-            for (int cByte=0;cByte<remanining;cByte++){
-                chunk[cByte]=fullvideo[bins*10240+cByte];
-            }
-            //TODO fill in Value metadata
-            videoChunk.videoFile.videoFileChunk=chunk;
-            video.add(videoChunk);
             fullvideo=null;
-            channelName.userVideoFilesMap.put(filename,video);
+            channelName.userVideoFilesMap.put(filename,video);//Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
         }
         return video;
     }
@@ -153,35 +155,32 @@ public class Publisher extends AppNode implements Runnable {
     public Connection connect(String ip, int port) {
         Connection connection = super.connect(ip, port);
         try {
-            connection.out.writeUTF("connectP");
-            String received=connection.in.readUTF();
-            if (!received.equals("complete")){
-                throw new Exception("Error: action not completed in broker");
-            }
+            connection.out.writeUTF("connectP");//Send a message to the corresponding 
+            // String received=connection.in.readUTF();
+            // if (!received.equals("complete")){
+            //     throw new Exception("Error: action not completed in broker");
+            // }
         
         } catch (IOException io) {
             System.out.println("Error in input/output when sending connection messages");
-        }catch(Exception e){
-            System.out.println(e.getMessage());
         }
+        // catch(Exception e){
+        //     System.out.println(e.getMessage());
+        // }
         return connection;
     }
 
     @Override
     public void disconnect(Connection connection) {
         try {
-            connection.out.writeUTF("disconnectP");
-            String received=connection.in.readUTF();
-            if (!received.equals("complete")){
-                throw new Exception("Error: action not completed in broker");
-            }
+            connection.out.writeUTF("disconnectP");//Send a disconnect message to your corresponding broker, which it will propagate to the other brokers
+            // String received=connection.in.readUTF();//Await a response that the object has been disconnected from the brokers succesfully
+            // if (!received.equals("complete")){
+            //     throw new Exception("Error: action not completed in broker");
+            // }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        /* Send disconnection messages to broker
-         * Call the super method to close the streams etc.
-         * Remove it from the HashMap
-         */
         super.disconnect(connection);
     }
 
