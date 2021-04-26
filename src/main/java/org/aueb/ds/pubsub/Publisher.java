@@ -14,6 +14,7 @@ import org.xml.sax.ContentHandler;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -105,41 +106,45 @@ public class Publisher extends AppNode implements Runnable {
         if (channelName.userVideoFilesMap.containsKey(filename)){//if the video is already contained in the channel name's video hashmap then it is already chunked
             video=channelName.userVideoFilesMap.get(filename);
         }else{//if not we parse the video from scratch
-            ParseContext context=new ParseContext();//Tika's contect parser
-            ContentHandler han=new BodyContentHandler();//
-            Metadata data=new Metadata();//The metadata object to ectract the Value classs' attributes
-            FileInputStream stream=new FileInputStream(new File(filename));//The byte stream to read the .mp4 file
-            Parser parser=new AutoDetectParser();
-            parser.parse(stream, han, data, context);//Parsing the data
-            //TODO fill in metadata using the metadata object
-            byte[] fullvideo=stream.readAllBytes();//Exctract all bytes from the .mp4 file
-            int len=fullvideo.length;
-            int bins=Math.floorDiv(len, 10*1024);//calculate the number of 10KB full bins
-            video=new ArrayList<Value>();
-            Value videoChunk=new Value();
-            byte[] chunk=null;//initialising the cunck arraylist as well as the temporary variables to construct the videofile objects in
-            for(int currentbin=0;currentbin<bins;currentbin++){//Fill each new Value with the corresponding part of the full video array
-                chunk=new byte[100240];
-                for (int cByte=0;cByte<100240;cByte++){
-                    chunk[cByte]=fullvideo[cByte+currentbin*10240];//Map the correct interval of the full video array to copy to the chunk
+            try {
+                ParseContext context=new ParseContext();//Tika's contect parser
+                ContentHandler han=new BodyContentHandler();//
+                Metadata data=new Metadata();//The metadata object to ectract the Value classs' attributes
+                FileInputStream stream=new FileInputStream(new File(filename));//The byte stream to read the .mp4 file
+                Parser parser=new AutoDetectParser();
+                parser.parse(stream, han, data, context);//Parsing the data
+                //TODO fill in metadata using the metadata object
+                byte[] fullvideo=stream.readAllBytes();//Exctract all bytes from the .mp4 file
+                int len=fullvideo.length;
+                int bins=Math.floorDiv(len, 10*1024);//calculate the number of 10KB full bins
+                video=new ArrayList<Value>();
+                Value videoChunk=new Value();
+                byte[] chunk=null;//initialising the cunck arraylist as well as the temporary variables to construct the videofile objects in
+                for(int currentbin=0;currentbin<bins;currentbin++){//Fill each new Value with the corresponding part of the full video array
+                    chunk=new byte[100240];
+                    for (int cByte=0;cByte<100240;cByte++){
+                        chunk[cByte]=fullvideo[cByte+currentbin*10240];//Map the correct interval of the full video array to copy to the chunk
+                    }
+                    //TODO fill in Value metadata
+                    videoChunk.videoFile.videoFileChunk=chunk;//Create the Value objects and add them to the video ArrayList
+                    video.add(videoChunk);
+                    videoChunk=new Value();
                 }
-                //TODO fill in Value metadata
-                videoChunk.videoFile.videoFileChunk=chunk;//Create the Value objects and add them to the video ArrayList
-                video.add(videoChunk);
-                videoChunk=new Value();
-            }
-            int remanining=len-(bins*10240);//Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes to house them, and follow the same procedure 
-            if (remanining!=0){
-                chunk=new byte[remanining];
-                for (int cByte=0;cByte<remanining;cByte++){
-                    chunk[cByte]=fullvideo[bins*10240+cByte];
+                int remanining=len-(bins*10240);//Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes to house them, and follow the same procedure 
+                if (remanining!=0){
+                    chunk=new byte[remanining];
+                    for (int cByte=0;cByte<remanining;cByte++){
+                        chunk[cByte]=fullvideo[bins*10240+cByte];
+                    }
+                    //TODO fill in Value metadata
+                    videoChunk.videoFile.videoFileChunk=chunk;
+                    video.add(videoChunk);
                 }
-                //TODO fill in Value metadata
-                videoChunk.videoFile.videoFileChunk=chunk;
-                video.add(videoChunk);
+                fullvideo=null;
+                channelName.userVideoFilesMap.put(filename,video);//Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
+            } catch (FileNotFoundException e) {
+                System.out.println("Error: the file was not found: "+e.getMessage());
             }
-            fullvideo=null;
-            channelName.userVideoFilesMap.put(filename,video);//Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
         }
         return video;
     }
@@ -212,28 +217,31 @@ public class Publisher extends AppNode implements Runnable {
         public void run() {
             try {
                 ObjectOutputStream out=new ObjectOutputStream(this.socket.getOutputStream());
-                ObjectInputStream in =new ObjectInputStream(this.socket.getInputStream());
-                String action=in.readUTF();
-                if (action.equals("pull")){
-                    String filename=in.readUTF();
-                    try{
-                        ArrayList<Value> videoChuncked=publisher.generateChunks(filename);
-                        int length=videoChuncked.size();
-                        out.writeInt(length);
-                        for (Value i:videoChuncked){
-                            out.writeObject(i);
-                        }
-                        String received=in.readUTF();
-                        if (!received.equals("complete"));
-                            throw new Exception("Error incomplete send");
-                    }catch(Exception e){
-                        //TODO: handle exception
-                    }
+                ObjectInputStream in =new ObjectInputStream(this.socket.getInputStream());//Initialising input and output streams
+                String action=in.readUTF();//recieving an action string from the broker
+                if (action.equals("push")){//if the requested action is a pull action
+                    String topic=in.readUTF();
+                    //TODO push
+                    // try{//for Push
+                    //     ArrayList<Value> videoChuncked=publisher.generateChunks(filename);
+                    //     int length=videoChuncked.size();
+                    //     out.writeInt(length);
+                    //     for (Value i:videoChuncked){
+                    //         out.writeObject(i);
+                    //     }
+                    //     // String received=in.readUTF();
+                    //     // if (!received.equals("complete")){
+                    //     //     throw new Exception("Error incomplete send");
+                    //     // }
+                    // }catch(Exception e){
+                    //     System.out.println("Error : "+e.getMessage());
+                    // }
                 }else if(action.equals("notify")) {
                     String receive=in.readUTF();
+                    //TODO implement notify Publicers
                 }
             } catch (IOException io) {
-                //TODO: handle exception
+                System.out.println("Error in input or output: "+io.getMessage());
             }
             
         }
