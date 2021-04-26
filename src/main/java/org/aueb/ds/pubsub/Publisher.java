@@ -103,8 +103,18 @@ public class Publisher extends AppNode implements Runnable {
     @Override
     public Connection connect(String ip, int port) {
         Connection connection = super.connect(ip, port);
-        connection.out=new ObjectOutputStream(connection.socket.getOutputStream());
-        connect.in=
+        try {
+            connection.out.writeUTF("connectP");
+            String received=connection.in.readUTF();
+            if (!received.equals("complete")){
+                throw new Exception("Error: action not completed in broker");
+            }
+        
+        } catch (IOException io) {
+            System.out.println("Error in input/output when sending connection messages");
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
         /* Send messages to broker
          * Receive serialized Broker object
          */
@@ -113,6 +123,15 @@ public class Publisher extends AppNode implements Runnable {
 
     @Override
     public void disconnect(Connection connection) {
+        try {
+            connection.out.writeUTF("disconnectP");
+            String received=connection.in.readUTF();
+            if (!received.equals("complete")){
+                throw new Exception("Error: action not completed in broker");
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
         /* Send disconnection messages to broker
          * Call the super method to close the streams etc.
          * Remove it from the HashMap
@@ -146,6 +165,7 @@ public class Publisher extends AppNode implements Runnable {
 
         @Override
         public void run() {
+            
             
         }
     }
