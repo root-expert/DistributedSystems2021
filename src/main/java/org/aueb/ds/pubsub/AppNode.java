@@ -11,8 +11,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class AppNode implements Node {
-    //Testing revert
-    
+
     private static ArrayList<Broker> brokers = new ArrayList<>();
     protected static AppNodeConfig config;
 
