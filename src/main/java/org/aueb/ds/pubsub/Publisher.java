@@ -33,7 +33,9 @@ public class Publisher extends AppNode implements Runnable {
     public Publisher(AppNodeConfig conf) {
         super(conf);
     }
-
+    public Publisher(String ip,int port){
+        // connect(ip, port);
+    }
     public void addHashTag(String hashtag) {
 
     }
@@ -207,8 +209,8 @@ public class Publisher extends AppNode implements Runnable {
     @Override
     public void run() {
         try {
-            ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
-
+            ServerSocket serverSocket = new ServerSocket(4321);
+            System.out.println("Hello");
             while (true) {
                 Socket socket = serverSocket.accept();
                 Thread handler = new Thread(new Handler(socket, this));
@@ -230,15 +232,20 @@ public class Publisher extends AppNode implements Runnable {
 
         @Override
         public void run() {
+            ObjectOutputStream out;
+            ObjectInputStream in;
             try {
-                ObjectOutputStream out=new ObjectOutputStream(this.socket.getOutputStream());
-                ObjectInputStream in =new ObjectInputStream(this.socket.getInputStream());//Initialising input and output streams
+                out=new ObjectOutputStream(this.socket.getOutputStream());
+                in=new ObjectInputStream(this.socket.getInputStream());//Initialising input and output streams
                 String action=in.readUTF();//recieving an action string from the broker
                 if (action.equals("push")){//if the requested action is a pull action
                     String topic=in.readUTF();//read the topic
                     ChannelName cn=publisher.channelName;
                     if (topic.charAt(0)=='#'){//if it is a hashtag
                         // topic=topic.substring(1);//remove it in order to search in the hashmap
+                        out.writeUTF("received hashtag "+topic);
+                        out.flush();
+
                         ArrayList<String> toSend=new ArrayList<String>();//filenames to push
                         for (String filename:cn.userVideoFilesMap.keySet()){//for every hashtag in the user's videos
                             Value sample=cn.userVideoFilesMap.get(filename).get(0);//Search for the hashtag in the hashtags that concern this video
@@ -260,6 +267,8 @@ public class Publisher extends AppNode implements Runnable {
                         }
                         //search hastags
                     }else{
+                        out.writeUTF("received channel name "+topic);
+                        out.flush();
                         if(cn.channelName.equals(topic)){//if it's a channel name, every video of the publisher is pushed
                             if (cn.userVideoFilesMap.isEmpty()) {
                                 for (String filename:cn.userVideoFilesMap.keySet()){
@@ -292,10 +301,10 @@ public class Publisher extends AppNode implements Runnable {
                     String receive=in.readUTF();
                     //TODO implement notify Publicers
                 }
+                in.close();out.close();
             } catch (IOException io) {
                 System.out.println("Error in input or output: "+io.getMessage());
             }
-            
         }
     }
 }

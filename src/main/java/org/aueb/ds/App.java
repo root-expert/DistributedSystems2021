@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -71,6 +75,8 @@ public class App {
                 }
                 break;
             case "test":
+                System.out.println();
+                break;
                 // try {
                 //     ParseContext context=new ParseContext();//Tika's contect parser
                 //     BodyContentHandler  han=new BodyContentHandler();//
@@ -90,10 +96,19 @@ public class App {
                 // }catch(TikaException tika){
                 //     System.out.println("Error: "+tika.getMessage());
                 // }
-
+                // Thread pub= new Thread(new Publisher("127.0.0.1",4321));
+                // pub.start();
+                // new InnerBroker("anastasis").start();
+                // try {
+                //     Thread.sleep(1000);
+                // } catch (Exception e) {
+                //     System.out.println(e.getMessage());
+                // }
+                // new InnerBroker("#foryoupage").start();
             default:
                 System.out.println("Invalid arguments");
                 break;
         }
     }
+    
 }
