@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public class VideoFile implements Serializable {
 
     String videoName;
-    String channelName;
+    public String channelName;
     String dateCreated;
     String length;
     String framerate;

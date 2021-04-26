@@ -113,7 +113,6 @@ public class Publisher extends AppNode implements Runnable {
                 FileInputStream stream=new FileInputStream(new File(filename));//The byte stream to read the .mp4 file
                 Parser parser=new AutoDetectParser();
                 parser.parse(stream, han, data, context);//Parsing the data
-                //TODO fill in metadata using the metadata object
                 byte[] fullvideo=stream.readAllBytes();//Exctract all bytes from the .mp4 file
                 int len=fullvideo.length;
                 int bins=Math.floorDiv(len, 10*1024);//calculate the number of 10KB full bins
@@ -126,17 +125,29 @@ public class Publisher extends AppNode implements Runnable {
                         chunk[cByte]=fullvideo[cByte+currentbin*10240];//Map the correct interval of the full video array to copy to the chunk
                     }
                     //TODO fill in Value metadata
+                    //Exctract name
+                    videoChunk.videoFile.channelName=this.channelName.channelName;
+                    //Extract date
+                    //Ectract length
+                    //Exctract framerate
+                    //Extract frame Width
                     videoChunk.videoFile.videoFileChunk=chunk;//Create the Value objects and add them to the video ArrayList
                     video.add(videoChunk);
                     videoChunk=new Value();
                 }
                 int remanining=len-(bins*10240);//Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes to house them, and follow the same procedure 
                 if (remanining!=0){
-                    chunk=new byte[remanining];
+                    chunk=new byte[10240];//the chunks have to be of equal size
                     for (int cByte=0;cByte<remanining;cByte++){
                         chunk[cByte]=fullvideo[bins*10240+cByte];
                     }
                     //TODO fill in Value metadata
+                    //Exctract name
+                    videoChunk.videoFile.channelName=this.channelName.channelName;
+                    //Extract date
+                    //Ectract length
+                    //Exctract framerate
+                    //Extract frame Width
                     videoChunk.videoFile.videoFileChunk=chunk;
                     video.add(videoChunk);
                 }
@@ -145,6 +156,7 @@ public class Publisher extends AppNode implements Runnable {
             } catch (FileNotFoundException e) {
                 System.out.println("Error: the file was not found: "+e.getMessage());
             }
+
         }
         return video;
     }
