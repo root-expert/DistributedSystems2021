@@ -2,6 +2,7 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
+import org.aueb.ds.model.config.AppNodeConfig;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,10 +11,8 @@ import java.util.ArrayList;
 
 public class Consumer extends AppNode implements Runnable {
 
-    private final String firstBrokerIP;
-
-    public Consumer(String firstBrokerIP) {
-        this.firstBrokerIP = firstBrokerIP;
+    public Consumer(AppNodeConfig conf) {
+        super(conf);
     }
 
     /**
@@ -27,7 +26,7 @@ public class Consumer extends AppNode implements Runnable {
     public void init(String ip, int port) {
         super.init(ip, port);
 
-        Connection connection = connect(firstBrokerIP, BROKER_PORT);
+        Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
 
         try {
             connection.in = new ObjectInputStream(connection.socket.getInputStream());

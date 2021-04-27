@@ -2,6 +2,7 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
+import org.aueb.ds.model.config.BrokerConfig;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -14,9 +15,12 @@ public class Broker implements Node, Serializable, Runnable {
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
 
+    protected BrokerConfig config;
     protected String hash = null;
-    protected String ip = null;
-    protected final int PORT = 24568;
+
+    public Broker(BrokerConfig config) {
+        this.config = config;
+    }
 
     public void calculateKeys() {
 
@@ -74,7 +78,7 @@ public class Broker implements Node, Serializable, Runnable {
     @Override
     public void run() {
         try {
-            ServerSocket serverSocket = new ServerSocket(PORT);
+            ServerSocket serverSocket = new ServerSocket(config.getPort());
 
             while (true) {
                 Socket socket = serverSocket.accept();
