@@ -14,13 +14,7 @@ import org.aueb.ds.util.Hashing;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -48,7 +42,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     /**
      * Hashes the specified topic with MD5 algo.
-     * 
+     *
      * @param topic Topic to hash.
      * @return The broker which is responsible for the specified topic.
      */
@@ -62,11 +56,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         for (Broker broker : brokers) {
             // TODO: Cover all cases
             switch (broker.hash.compareTo(hashedTopic)) {
-            case -1:
-            case 0:
-                selected = broker;
-                break;
-            case 1:
+                case -1:
+                case 0:
+                    selected = broker;
+                    break;
+                case 1:
             }
         }
         return selected;
@@ -74,7 +68,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     /**
      * Pushes data to the specified topic
-     * 
+     *
      * @param topic Topic to push data.
      * @param value Data to push.
      */
@@ -83,7 +77,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     /**
      * Notifies about a failed push operation.
-     * 
+     *
      * @param broker The Broker to notify.
      */
     public void notifyFailure(Broker broker) {
@@ -106,96 +100,95 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
-    public ArrayList<Value> generateChunks(String filename){
+    public ArrayList<Value> generateChunks(String filename) {
         // TODO Metadata
         ArrayList<Value> video = null;
-        final int chunkSise=10240;
+        final int chunkSize = 10 * 1024;
+
         // if the video is already contained in the channel name's video hashmap then it is already chunked
-        if (channelName.userVideoFilesMap.containsKey(filename)) {
-            video = channelName.userVideoFilesMap.get(filename);
-        } else {// if not we parse the video from scratch
-            try{
-                // Tika's contect parser
-                ParseContext context = new ParseContext();
-                ContentHandler han = new BodyContentHandler();
-                // The metadata object to ectract the Value classs' attributes
-                Metadata data = new Metadata();
+        if (channelName.userVideoFilesMap.containsKey(filename))
+            return channelName.userVideoFilesMap.get(filename);
 
-                // The byte stream to read the .mp4 file
-                FileInputStream stream = new FileInputStream(new File(filename));
-                Parser parser = new AutoDetectParser();
-                parser.parse(stream, han, data, context);// Parsing the data
-                
-                // Exctract all bytes from the .mp4 file
-                byte[] fullvideo = stream.readAllBytes();
-                int len = fullvideo.length;
+        try {
+            // Tika's context parser
+            ParseContext context = new ParseContext();
+            ContentHandler han = new BodyContentHandler();
+            // The metadata object to extract the Value class' attributes
+            Metadata data = new Metadata();
 
-                // calculate the number of 10KB full bins
-                int bins = Math.floorDiv(len, chunkSise);
+            // The byte stream to read the .mp4 file
+            File file = new File(filename);
+            FileInputStream stream = new FileInputStream(file);
+            Parser parser = new AutoDetectParser();
+            parser.parse(stream, han, data, context);// Parsing the data
 
-                /* initialising the cunck arraylist as well as the temporary variables to
-                * construct the videofile objects in               
-                */
-                video = new ArrayList<Value>();
-                
-                Value videoChunk = new Value();
-                
-                byte[] chunk = null;
+            // Extract all bytes from the .mp4 file
+            byte[] fullVideo = new byte[(int) file.length()];
+            int len = stream.read(fullVideo);
 
-                // Fill each new Value with the corresponding part of the full video array
-                for (int currentbin = 0; currentbin < bins; currentbin++) {
-                    chunk = new byte[chunkSise];
+            // calculate the number of 10KB full bins
+            int bins = Math.floorDiv(len, chunkSize);
 
-                    // Map the correct interval of the full video array to copy to the chunk
-                    for (int cByte = 0; cByte < chunkSise; cByte++) {
-                        chunk[cByte] = fullvideo[cByte + currentbin * chunkSise];
-                    }
-                    // Create the Value objects and add them to the video ArrayList
-                    // TODO fill in Value metadata
-                    // Exctract name
-                    videoChunk.videoFile.channelName = this.channelName.channelName;
-                    // Extract date
-                    // Ectract length
-                    // Exctract framerate
-                    // Extract frame Width
-                    videoChunk.videoFile.videoFileChunk = chunk;
-                    video.add(videoChunk);
-                    videoChunk = new Value();
+            /* initialising the chunk arraylist as well as the temporary variables to
+             * construct the videoFile objects in
+             */
+            video = new ArrayList<>();
+
+            Value videoChunk = new Value();
+
+            byte[] chunk = null;
+
+            // Fill each new Value with the corresponding part of the full video array
+            for (int currentbin = 0; currentbin < bins; currentbin++) {
+                chunk = new byte[chunkSize];
+
+                // Map the correct interval of the full video array to copy to the chunk
+                for (int cByte = 0; cByte < chunkSize; cByte++) {
+                    chunk[cByte] = fullVideo[cByte + currentbin * chunkSize];
                 }
-                /** Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes
-                * to house them, and follow the
-                * same procedure
-                */
-                int remanining = len - (bins * chunkSise);
-                if (remanining > 0) {
-                    // the chunks have to be of equal size
-                    chunk = new byte[chunkSise];
-                    for (int cByte = 0; cByte < remanining; cByte++) {
-                        chunk[cByte] = fullvideo[bins * chunkSise + cByte];
-                    }
-                    // Create the Value objects and add them to the video ArrayList
-                    // TODO fill in Value metadata
-                    // Exctract name
-                    videoChunk.videoFile.channelName = this.channelName.channelName;
-                    // Extract date
-                    // Ectract length
-                    // Exctract framerate
-                    // Extract frame Width
-                    videoChunk.videoFile.videoFileChunk = chunk;
-                    video.add(videoChunk);
-                }
-                fullvideo = null;
-                // Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
-                channelName.userVideoFilesMap.put(filename, video);
-            }catch(FileNotFoundException f){
-                System.out.println("Error: could not find file: "+f.getMessage());
-            }catch(IOException io){
-                System.out.println("Error: problem during input/output: "+io.getMessage());
-            }catch(SAXException sax){
-                System.out.println("Error: "+sax.getMessage());
-            }catch(TikaException tika){
-                System.out.println("Error: "+tika.getMessage());
+                // Create the Value objects and add them to the video ArrayList
+                // TODO fill in Value metadata
+                // Extract name
+                videoChunk.videoFile.channelName = this.channelName.channelName;
+                // Extract date
+                // Extract length
+                // Extract framerate
+                // Extract frame Width
+                videoChunk.videoFile.videoFileChunk = chunk;
+                video.add(videoChunk);
+                videoChunk = new Value();
             }
+            /* Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes
+             * to house them, and follow the
+             * same procedure
+             */
+            int remaining = len - (bins * chunkSize);
+            if (remaining > 0) {
+                // the chunks have to be of equal size
+                chunk = new byte[chunkSize];
+                for (int cByte = 0; cByte < remaining; cByte++) {
+                    chunk[cByte] = fullVideo[bins * chunkSize + cByte];
+                }
+                // Create the Value objects and add them to the video ArrayList
+                // TODO fill in Value metadata
+                // Extract name
+                videoChunk.videoFile.channelName = this.channelName.channelName;
+                // Extract date
+                // Extract length
+                // Extract framerate
+                // Extract frame Width
+                videoChunk.videoFile.videoFileChunk = chunk;
+                video.add(videoChunk);
+            }
+            fullVideo = null;
+            // Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
+            channelName.userVideoFilesMap.put(filename, video);
+        } catch (FileNotFoundException f) {
+            System.out.println("Error: could not find file: " + f.getMessage());
+        } catch (IOException io) {
+            System.out.println("Error: problem during input/output: " + io.getMessage());
+        } catch (SAXException | TikaException sax) {
+            System.out.println("Error: " + sax.getMessage());
         }
         return video;
     }
@@ -203,7 +196,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     /**
      * Opens a connections to the specified IP and port and sends registration
      * messages.
-     * 
+     *
      * @param ip   The IP to open the connection.
      * @param port The port to open the connection.
      * @return A Connection object.
@@ -225,8 +218,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void disconnect(Connection connection) {
         try {
             /* Send a disconnect message to your corresponding broker,
-            * which it will propagate to the other brokers
-            */
+             * which it will propagate to the other brokers
+             */
             connection.out.writeUTF("disconnectP");
             //send channel name to let the broker know which publisher to remove
             connection.out.writeUTF(channelName.channelName);
@@ -284,10 +277,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             // Search for the hashtag in the hashtags that concern this video
                             Value sample = cn.userVideoFilesMap.get(filename).get(0);
 
-                            /* If the required hashtag is found, then we add the video 
-                            * name in the list of videos topush
-                            */
-                            if (sample.videoFile.associatedHashtags.contains(topic)){
+                            /* If the required hashtag is found, then we add the video
+                             * name in the list of videos topush
+                             */
+                            if (sample.videoFile.associatedHashtags.contains(topic)) {
                                 toSend.add(filename);
                             }
                         }
@@ -307,7 +300,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                 }
                             }
                         }
-                        // search hastags
+                        // search hashtags
                     } else {
                         // if it's a channel name, every video of the publisher is pushed
                         if (cn.channelName.equals(topic)) {
@@ -328,7 +321,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             }
                         } else {
                             // Error code if the channel name is not this Publisher's
-                            out.writeInt(-1); 
+                            out.writeInt(-1);
                             out.flush();
                         }
                     }

@@ -1,26 +1,13 @@
 package org.aueb.ds;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.net.UnknownHostException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-// import org.apache.tika.parser.mp4.MP4Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.model.config.BrokerConfig;
 import org.aueb.ds.pubsub.Broker;
 import org.aueb.ds.pubsub.Consumer;
 import org.aueb.ds.pubsub.Publisher;
 import org.aueb.ds.util.ConfigParser;
-import org.xml.sax.SAXException;
+
+import java.io.IOException;
 
 public class App {
 
@@ -79,5 +66,4 @@ public class App {
                 break;
         }
     }
-    
 }
