@@ -5,13 +5,13 @@ import java.util.ArrayList;
 
 public class VideoFile implements Serializable {
 
-    String videoName;
+    public String videoName;
     public String channelName;
-    String dateCreated;
-    String length;
-    String framerate;
-    String frameWidth;
-    String frameHeight;
+    public String dateCreated;
+    public String length;
+    public String framerate;
+    public String frameWidth;
+    public String frameHeight;
     public ArrayList<String> associatedHashtags;
     public byte[] videoFileChunk;
 
