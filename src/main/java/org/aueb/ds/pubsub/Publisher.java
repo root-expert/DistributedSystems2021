@@ -1,5 +1,6 @@
 package org.aueb.ds.pubsub;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -11,6 +12,7 @@ import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.util.Hashing;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -104,7 +106,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
-    public ArrayList<Value> generateChunks(String filename) throws Exception {
+    public ArrayList<Value> generateChunks(String filename){
         // TODO Metadata
         ArrayList<Value> video = null;
         final int chunkSise=10240;
@@ -112,7 +114,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         if (channelName.userVideoFilesMap.containsKey(filename)) {
             video = channelName.userVideoFilesMap.get(filename);
         } else {// if not we parse the video from scratch
-            try {
+            try{
                 // Tika's contect parser
                 ParseContext context = new ParseContext();
                 ContentHandler han = new BodyContentHandler();
@@ -185,10 +187,15 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 fullvideo = null;
                 // Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
                 channelName.userVideoFilesMap.put(filename, video);
-            } catch (FileNotFoundException e) {
-                System.out.println("Error: the file was not found: " + e.getMessage());
+            }catch(FileNotFoundException f){
+                System.out.println("Error: could not find file: "+f.getMessage());
+            }catch(IOException io){
+                System.out.println("Error: problem during input/output: "+io.getMessage());
+            }catch(SAXException sax){
+                System.out.println("Error: "+sax.getMessage());
+            }catch(TikaException tika){
+                System.out.println("Error: "+tika.getMessage());
             }
-
         }
         return video;
     }
@@ -205,7 +212,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public Connection connect(String ip, int port) {
         Connection connection = super.connect(ip, port);
         try {
-            // Send a message to the corresponding Broker and the Publisher object to be added in it's hashmap
+            // Send a message to the corresponding Broker and the Publisher object to be added in its hashmap
             connection.out.writeUTF("connectP");
             connection.out.writeObject(this);
         } catch (IOException io) {
@@ -325,9 +332,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             out.flush();
                         }
                     }
-                } else if (action.equals("notify")) {
-                    String receive = in.readUTF();//
-                    // TODO implement notify Publicers
                 }
                 in.close();
                 out.close();
