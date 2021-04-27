@@ -12,7 +12,7 @@ import java.net.UnknownHostException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.*;
+// import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.model.config.BrokerConfig;
@@ -75,18 +75,17 @@ public class App {
                 }
                 break;
             case "test":
-                System.out.println();
-                break;
+                //System.out.println("hello");
+                // Parser test, Failed
                 // try {
                 //     ParseContext context=new ParseContext();//Tika's contect parser
                 //     BodyContentHandler  han=new BodyContentHandler();//
                 //     Metadata data=new Metadata();//The metadata object to ectract the Value classs' attributes
                 //     FileInputStream stream=new FileInputStream(new File("temp.mp4"));//The byte stream to read the .mp4 file
-                //     FLVParser parser=new FLVParser();
+                //     MP4Parser parser=new MP4Parser();
                 //     parser.parse(stream, han, data, context);//Parsing the data
                 //     String[] names=data.names();
-                //     System.out.println(names.length);A
-                //     break;
+                //     System.out.println(names.length);
                 // } catch (FileNotFoundException e) {
                 //     System.out.println("Error: in finding the correct file: "+e.getMessage());
                 // }catch(IOException io){
@@ -105,6 +104,7 @@ public class App {
                 //     System.out.println(e.getMessage());
                 // }
                 // new InnerBroker("#foryoupage").start();
+                break;
             default:
                 System.out.println("Invalid arguments");
                 break;

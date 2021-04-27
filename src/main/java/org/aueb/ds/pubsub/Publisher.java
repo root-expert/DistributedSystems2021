@@ -243,7 +243,7 @@ public class Publisher extends AppNode implements Runnable {
                     ChannelName cn=publisher.channelName;
                     if (topic.charAt(0)=='#'){//if it is a hashtag
                         // topic=topic.substring(1);//remove it in order to search in the hashmap
-                        out.writeUTF("received hashtag "+topic);
+                        //out.writeUTF("received hashtag "+topic);
                         out.flush();
 
                         ArrayList<String> toSend=new ArrayList<String>();//filenames to push
@@ -267,7 +267,7 @@ public class Publisher extends AppNode implements Runnable {
                         }
                         //search hastags
                     }else{
-                        out.writeUTF("received channel name "+topic);
+                        //out.writeUTF("received channel name "+topic);
                         out.flush();
                         if(cn.channelName.equals(topic)){//if it's a channel name, every video of the publisher is pushed
                             if (cn.userVideoFilesMap.isEmpty()) {
