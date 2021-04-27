@@ -32,10 +32,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         super(conf);
     }
 
-    public Publisher(String ip, int port) {
-        // connect(ip, port);
-    }
-
     public void addHashTag(String hashtag) {
 
     }
@@ -111,32 +107,48 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public ArrayList<Value> generateChunks(String filename) throws Exception {
         // TODO Metadata
         ArrayList<Value> video = null;
-        if (channelName.userVideoFilesMap.containsKey(filename)) {// if the video is already contained in the channel
-                                                                  // name's video hashmap then it is already chunked
+        final int chunkSise=10240;
+        // if the video is already contained in the channel name's video hashmap then it is already chunked
+        if (channelName.userVideoFilesMap.containsKey(filename)) {
             video = channelName.userVideoFilesMap.get(filename);
         } else {// if not we parse the video from scratch
             try {
-                ParseContext context = new ParseContext();// Tika's contect parser
-                ContentHandler han = new BodyContentHandler();//
-                Metadata data = new Metadata();// The metadata object to ectract the Value classs' attributes
-                FileInputStream stream = new FileInputStream(new File(filename));// The byte stream to read the .mp4
-                                                                                 // file
+                // Tika's contect parser
+                ParseContext context = new ParseContext();
+                ContentHandler han = new BodyContentHandler();
+                // The metadata object to ectract the Value classs' attributes
+                Metadata data = new Metadata();
+
+                // The byte stream to read the .mp4 file
+                FileInputStream stream = new FileInputStream(new File(filename));
                 Parser parser = new AutoDetectParser();
                 parser.parse(stream, han, data, context);// Parsing the data
-                byte[] fullvideo = stream.readAllBytes();// Exctract all bytes from the .mp4 file
+                
+                // Exctract all bytes from the .mp4 file
+                byte[] fullvideo = stream.readAllBytes();
                 int len = fullvideo.length;
-                int bins = Math.floorDiv(len, 10 * 1024);// calculate the number of 10KB full bins
+
+                // calculate the number of 10KB full bins
+                int bins = Math.floorDiv(len, chunkSise);
+
+                /* initialising the cunck arraylist as well as the temporary variables to
+                * construct the videofile objects in               
+                */
                 video = new ArrayList<Value>();
+                
                 Value videoChunk = new Value();
-                byte[] chunk = null;// initialising the cunck arraylist as well as the temporary variables to
-                                    // construct the videofile objects in
-                for (int currentbin = 0; currentbin < bins; currentbin++) {// Fill each new Value with the corresponding
-                                                                           // part of the full video array
-                    chunk = new byte[100240];
-                    for (int cByte = 0; cByte < 100240; cByte++) {
-                        chunk[cByte] = fullvideo[cByte + currentbin * 10240];// Map the correct interval of the full
-                                                                             // video array to copy to the chunk
+                
+                byte[] chunk = null;
+
+                // Fill each new Value with the corresponding part of the full video array
+                for (int currentbin = 0; currentbin < bins; currentbin++) {
+                    chunk = new byte[chunkSise];
+
+                    // Map the correct interval of the full video array to copy to the chunk
+                    for (int cByte = 0; cByte < chunkSise; cByte++) {
+                        chunk[cByte] = fullvideo[cByte + currentbin * chunkSise];
                     }
+                    // Create the Value objects and add them to the video ArrayList
                     // TODO fill in Value metadata
                     // Exctract name
                     videoChunk.videoFile.channelName = this.channelName.channelName;
@@ -144,19 +156,22 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     // Ectract length
                     // Exctract framerate
                     // Extract frame Width
-                    videoChunk.videoFile.videoFileChunk = chunk;// Create the Value objects and add them to the video
-                                                                // ArrayList
+                    videoChunk.videoFile.videoFileChunk = chunk;
                     video.add(videoChunk);
                     videoChunk = new Value();
                 }
-                int remanining = len - (bins * 10240);// Calculate the remaining rogue bytes, if any and create a final
-                                                      // byte[] with less than 10240 bytes to house them, and follow the
-                                                      // same procedure
-                if (remanining != 0) {
-                    chunk = new byte[10240];// the chunks have to be of equal size
+                /** Calculate the remaining rogue bytes, if any and create a final byte[] with less than 10240 bytes
+                * to house them, and follow the
+                * same procedure
+                */
+                int remanining = len - (bins * chunkSise);
+                if (remanining > 0) {
+                    // the chunks have to be of equal size
+                    chunk = new byte[chunkSise];
                     for (int cByte = 0; cByte < remanining; cByte++) {
-                        chunk[cByte] = fullvideo[bins * 10240 + cByte];
+                        chunk[cByte] = fullvideo[bins * chunkSise + cByte];
                     }
+                    // Create the Value objects and add them to the video ArrayList
                     // TODO fill in Value metadata
                     // Exctract name
                     videoChunk.videoFile.channelName = this.channelName.channelName;
@@ -168,8 +183,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     video.add(videoChunk);
                 }
                 fullvideo = null;
-                channelName.userVideoFilesMap.put(filename, video);// Add chunked viedo in the channel name video
-                                                                   // hashmap for later use,and return the hashed video
+                // Add chunked viedo in the channel name video hashmap for later use,and return the hashed video
+                channelName.userVideoFilesMap.put(filename, video);
             } catch (FileNotFoundException e) {
                 System.out.println("Error: the file was not found: " + e.getMessage());
             }
@@ -190,34 +205,24 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public Connection connect(String ip, int port) {
         Connection connection = super.connect(ip, port);
         try {
-            connection.out.writeUTF("connectP");// Send a message to the corresponding
+            // Send a message to the corresponding Broker and the Publisher object to be added in it's hashmap
+            connection.out.writeUTF("connectP");
             connection.out.writeObject(this);
-            ;
-            // String received=connection.in.readUTF();
-            // if (!received.equals("complete")){
-            // throw new Exception("Error: action not completed in broker");
-            // }
-
         } catch (IOException io) {
             System.out.println("Error in input/output when sending connection messages");
         }
-        // catch(Exception e){
-        // System.out.println(e.getMessage());
-        // }
         return connection;
     }
 
     @Override
     public void disconnect(Connection connection) {
         try {
-            connection.out.writeUTF("disconnectP");// Send a disconnect message to your corresponding broker, which it
-                                                   // will propagate to the other brokers
+            /* Send a disconnect message to your corresponding broker,
+            * which it will propagate to the other brokers
+            */
+            connection.out.writeUTF("disconnectP");
+            //send channel name to let the broker know which publisher to remove
             connection.out.writeUTF(channelName.channelName);
-            // String received=connection.in.readUTF();//Await a response that the object is safely removed from the broker 
-            // has been disconnected from the brokers succesfully
-            // if (!received.equals("complete")){
-            // throw new Exception("Error: action not completed in broker");
-            // }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -228,7 +233,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void run() {
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
-            System.out.println("Hello");
             while (true) {
                 Socket socket = serverSocket.accept();
                 Thread handler = new Thread(new Handler(socket, this));
@@ -254,34 +258,43 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             ObjectInputStream in;
             try {
                 out = new ObjectOutputStream(this.socket.getOutputStream());
-                in = new ObjectInputStream(this.socket.getInputStream());// Initialising input and output streams
-                String action = in.readUTF();// recieving an action string from the broker
-                if (action.equals("push")) {// if the requested action is a pull action
-                    String topic = in.readUTF();// read the topic
+                // Initialising input and output streams
+                in = new ObjectInputStream(this.socket.getInputStream());
+                // recieving an action string from the broker
+                String action = in.readUTF();
+                // if the requested action is a pull action
+                if (action.equals("push")) {
+                    // read the topic
+                    String topic = in.readUTF();
                     ChannelName cn = publisher.channelName;
-                    if (topic.startsWith("#")) {// if it is a hashtag
-                        // topic=topic.substring(1);//remove it in order to search in the hashmap
-                        // out.writeUTF("received hashtag "+topic);
-                        // out.flush();
+                    // if it is a hashtag
+                    if (topic.startsWith("#")) {
+                        // filenames to push
+                        ArrayList<String> toSend = new ArrayList<String>();
 
-                        ArrayList<String> toSend = new ArrayList<String>();// filenames to push
-                        for (String filename : cn.userVideoFilesMap.keySet()) {// for every hashtag in the user's videos
-                            Value sample = cn.userVideoFilesMap.get(filename).get(0);// Search for the hashtag in the
-                                                                                     // hashtags that concern this video
-                            if (sample.videoFile.associatedHashtags.contains(topic)) {// If the required hashtag is
-                                                                                      // found then we add the video
-                                                                                      // name in the list of videos to
-                                                                                      // push
+                        // for every hashtag in the user's videos
+                        for (String filename : cn.userVideoFilesMap.keySet()) {
+                            // Search for the hashtag in the hashtags that concern this video
+                            Value sample = cn.userVideoFilesMap.get(filename).get(0);
+
+                            /* If the required hashtag is found, then we add the video 
+                            * name in the list of videos topush
+                            */
+                            if (sample.videoFile.associatedHashtags.contains(topic)){
                                 toSend.add(filename);
                             }
                         }
-                        if (toSend.isEmpty()) {// if no videos of the required topic are found, send -1 as an error code
+                        // if no videos of the required topic are found, send -1 as an error code
+                        if (toSend.isEmpty()) {
                             out.writeInt(-1);
                             out.flush();
                         } else {
-                            out.writeInt(0);//if videos are to be sent send 0 as a success code
+                            //if videos are to be sent send 0 as a success code
+                            out.writeInt(0);
                             out.flush();
-                            for (String filename : toSend) {// Push every chunk of the video
+
+                            // Push every chunk of the video
+                            for (String filename : toSend) {
                                 for (Value chunk : cn.userVideoFilesMap.get(filename)) {
                                     publisher.push(topic, chunk);
                                 }
@@ -289,41 +302,29 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         }
                         // search hastags
                     } else {
-                        // out.writeUTF("received channel name "+topic);
-                        //out.flush();
-                        if (cn.channelName.equals(topic)) {// if it's a channel name, every video of the publisher is
-                                                           // pushed
+                        // if it's a channel name, every video of the publisher is pushed
+                        if (cn.channelName.equals(topic)) {
                             if (!cn.userVideoFilesMap.isEmpty()) {
-                                out.writeInt(0);//if videos are to be sent send 0 as a success code
+                                //if videos are to be sent send 0 as a success code
+                                out.writeInt(0);
                                 out.flush();
+                                //Push every video the channel has
                                 for (String filename : cn.userVideoFilesMap.keySet()) {
                                     for (Value videoChunk : cn.userVideoFilesMap.get(filename)) {
                                         publisher.push(topic, videoChunk);
                                     }
                                 }
                             } else {
-                                out.writeInt(-1);// Error code if the channel doesn't have any videos
+                                // Error code if the channel doesn't have any videos
+                                out.writeInt(-1);
                                 out.flush();
                             }
                         } else {
-                            out.writeInt(-1); // Error code if the channel name is not this Publisher's
+                            // Error code if the channel name is not this Publisher's
+                            out.writeInt(-1); 
                             out.flush();
                         }
                     }
-                    // try{//for Push
-                    // ArrayList<Value> videoChuncked=publisher.generateChunks(filename);
-                    // int length=videoChuncked.size();
-                    // out.writeInt(length);
-                    // for (Value i:videoChuncked){
-                    // out.writeObject(i);
-                    // }
-                    // // String received=in.readUTF();
-                    // // if (!received.equals("complete")){
-                    // // throw new Exception("Error incomplete send");
-                    // // }
-                    // }catch(Exception e){
-                    // System.out.println("Error : "+e.getMessage());
-                    // }
                 } else if (action.equals("notify")) {
                     String receive = in.readUTF();//
                     // TODO implement notify Publicers
