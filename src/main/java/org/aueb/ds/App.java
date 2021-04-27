@@ -74,37 +74,6 @@ public class App {
                     e.printStackTrace();
                 }
                 break;
-            case "test":
-                //System.out.println("hello");
-                // Parser test, Failed
-                // try {
-                //     ParseContext context=new ParseContext();//Tika's contect parser
-                //     BodyContentHandler  han=new BodyContentHandler();//
-                //     Metadata data=new Metadata();//The metadata object to ectract the Value classs' attributes
-                //     FileInputStream stream=new FileInputStream(new File("temp.mp4"));//The byte stream to read the .mp4 file
-                //     MP4Parser parser=new MP4Parser();
-                //     parser.parse(stream, han, data, context);//Parsing the data
-                //     String[] names=data.names();
-                //     System.out.println(names.length);
-                // } catch (FileNotFoundException e) {
-                //     System.out.println("Error: in finding the correct file: "+e.getMessage());
-                // }catch(IOException io){
-                //     System.out.println("Error: in input/output: "+io.getMessage());
-                // }catch(SAXException sax){
-                //     System.out.println("Error: "+sax.getMessage());
-                // }catch(TikaException tika){
-                //     System.out.println("Error: "+tika.getMessage());
-                // }
-                // Thread pub= new Thread(new Publisher("127.0.0.1",4321));
-                // pub.start();
-                // new InnerBroker("anastasis").start();
-                // try {
-                //     Thread.sleep(1000);
-                // } catch (Exception e) {
-                //     System.out.println(e.getMessage());
-                // }
-                // new InnerBroker("#foryoupage").start();
-                break;
             default:
                 System.out.println("Invalid arguments");
                 break;
