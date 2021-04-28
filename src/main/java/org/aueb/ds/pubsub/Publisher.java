@@ -207,7 +207,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         try {
             // Send a message to the corresponding Broker and the Publisher object to be added in its hashmap
             connection.out.writeUTF("connectP");
+            connection.out.flush();
             connection.out.writeObject(this);
+            connection.out.flush();
         } catch (IOException io) {
             System.out.println("Error in input/output when sending connection messages");
         }
@@ -221,8 +223,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
              * which it will propagate to the other brokers
              */
             connection.out.writeUTF("disconnectP");
+            connection.out.flush();
             //send channel name to let the broker know which publisher to remove
             connection.out.writeUTF(channelName.channelName);
+            connection.out.flush();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
