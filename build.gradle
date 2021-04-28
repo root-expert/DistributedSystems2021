@@ -22,7 +22,6 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'org.apache.tika', name: 'tika-core', version: '1.4'
     implementation group: 'org.apache.tika', name: 'tika-parsers', version: '1.26'
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.3'
