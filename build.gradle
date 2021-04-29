@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '1.26'
+    implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.11.0'
     implementation group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: '2.12.3'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
