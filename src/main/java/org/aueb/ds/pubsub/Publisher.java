@@ -7,6 +7,8 @@ import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.util.Hashing;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -20,12 +22,26 @@ public class Publisher extends AppNode implements Runnable {
         super(conf);
     }
 
+    /**
+     * Add hashtag to ChannelName's List ("#viral")
+     * Inform Brokers
+     * @param hashtag HashTag added.
+     */
     public void addHashTag(String hashtag) {
-
+        channelName.hashtagsPublished.add(hashtag);
+        notifyBrokersForHashTags(hashtag,true);
+        System.out.println("Hashtag added.");
     }
 
+    /**
+     * Remove hashtag from ChannelName's List ("#viral")
+     * Inform Brokers
+     * @param hashtag HashTag removed.
+     */
     public void removeHashTag(String hashtag) {
-
+        channelName.hashtagsPublished.remove(hashtag);
+        notifyBrokersForHashTags(hashtag,false);
+        System.out.println("Hashtag removed.");
     }
 
     public void getBrokerList() {
@@ -70,7 +86,20 @@ public class Publisher extends AppNode implements Runnable {
      * @param broker The Broker to notify.
      */
     public void notifyFailure(Broker broker) {
+        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+
+            connection.out.writeUTF(channelName.channelName);
+            connection.out.writeUTF("PushFailed");
+            connection.out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            disconnect(connection);
+        }
     }
 
     /**
@@ -79,7 +108,27 @@ public class Publisher extends AppNode implements Runnable {
      * @param hashtag The hashtag to be notified.
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
+        Broker broker = hashTopic(hashtag);
+        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+
+            if (add) {
+                connection.out.writeUTF("AddHashTag");
+            }
+            else {
+                connection.out.writeUTF("RemoveHashTag");
+            }
+            connection.out.writeUTF(hashtag);
+            connection.out.writeUTF(channelName.channelName);
+            connection.out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            disconnect(connection);
+        }
     }
 
     /**
