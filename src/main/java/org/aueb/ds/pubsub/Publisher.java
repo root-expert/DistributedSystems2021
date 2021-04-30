@@ -20,12 +20,28 @@ public class Publisher extends AppNode implements Runnable {
         super(conf);
     }
 
+    /**
+     * Add hashtag to ChannelName's List ("#viral")
+     * Inform Brokers
+     *
+     * @param hashtag HashTag added.
+     */
     public void addHashTag(String hashtag) {
-
+        channelName.hashtagsPublished.add(hashtag);
+        notifyBrokersForHashTags(hashtag, true);
+        System.out.println("Hashtag added.");
     }
 
+    /**
+     * Remove hashtag from ChannelName's List ("#viral")
+     * Inform Brokers
+     *
+     * @param hashtag HashTag removed.
+     */
     public void removeHashTag(String hashtag) {
-
+        channelName.hashtagsPublished.remove(hashtag);
+        notifyBrokersForHashTags(hashtag, false);
+        System.out.println("Hashtag removed.");
     }
 
     public void getBrokerList() {
@@ -34,6 +50,7 @@ public class Publisher extends AppNode implements Runnable {
 
     /**
      * Hashes the specified topic with MD5 algo.
+     *
      * @param topic Topic to hash.
      * @return The broker which is responsible for the specified topic.
      */
@@ -59,6 +76,7 @@ public class Publisher extends AppNode implements Runnable {
 
     /**
      * Pushes data to the specified topic
+     *
      * @param topic Topic to push data.
      * @param value Data to push.
      */
@@ -67,10 +85,22 @@ public class Publisher extends AppNode implements Runnable {
 
     /**
      * Notifies about a failed push operation.
+     *
      * @param broker The Broker to notify.
      */
     public void notifyFailure(Broker broker) {
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            connection.out.writeUTF("PushFailed");
+            connection.out.writeUTF(channelName.channelName);
+
+            connection.out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            super.disconnect(connection);
+        }
     }
 
     /**
@@ -79,7 +109,24 @@ public class Publisher extends AppNode implements Runnable {
      * @param hashtag The hashtag to be notified.
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
+        Broker broker = hashTopic(hashtag);
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            if (add) {
+                connection.out.writeUTF("AddHashTag");
+            } else {
+                connection.out.writeUTF("RemoveHashTag");
+            }
+
+            connection.out.writeUTF(channelName.channelName);
+            connection.out.writeUTF(hashtag);
+            connection.out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            super.disconnect(connection);
+        }
     }
 
     /**
@@ -96,7 +143,8 @@ public class Publisher extends AppNode implements Runnable {
     /**
      * Opens a connections to the specified IP and port
      * and sends registration messages.
-     * @param ip The IP to open the connection.
+     *
+     * @param ip   The IP to open the connection.
      * @param port The port to open the connection.
      * @return A Connection object.
      */
