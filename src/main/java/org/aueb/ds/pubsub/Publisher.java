@@ -7,8 +7,6 @@ import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.util.Hashing;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -91,12 +89,9 @@ public class Publisher extends AppNode implements Runnable {
      * @param broker The Broker to notify.
      */
     public void notifyFailure(Broker broker) {
-        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
         try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
             connection.out.writeUTF("PushFailed");
             connection.out.writeUTF(channelName.channelName);
 
@@ -104,7 +99,7 @@ public class Publisher extends AppNode implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            disconnect(connection);
+            super.disconnect(connection);
         }
     }
 
@@ -115,24 +110,22 @@ public class Publisher extends AppNode implements Runnable {
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
         Broker broker = hashTopic(hashtag);
-        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
         try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
             if (add) {
                 connection.out.writeUTF("AddHashTag");
             } else {
                 connection.out.writeUTF("RemoveHashTag");
             }
-            connection.out.writeUTF(hashtag);
+
             connection.out.writeUTF(channelName.channelName);
+            connection.out.writeUTF(hashtag);
             connection.out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            disconnect(connection);
+            super.disconnect(connection);
         }
     }
 
