@@ -164,7 +164,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         chunk);
                 video.add(videoChunk);
             }
-            fullVideo = null;
             // Add chunked viedo in the channel name video hashmap for later use,and return
             // the hashed video
             channelName.userVideoFilesMap.put(filename, video);
