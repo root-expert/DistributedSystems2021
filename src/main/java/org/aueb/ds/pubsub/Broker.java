@@ -9,11 +9,16 @@ import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Broker implements Node, Serializable, Runnable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
+
+    private HashMap<Publisher, List<String>> publisherAssociatedHashtags = new HashMap<>();
+    private HashMap<Broker, List<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
     protected String hash = null;
