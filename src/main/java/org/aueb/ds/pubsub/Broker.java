@@ -6,6 +6,8 @@ import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -102,12 +104,30 @@ public class Broker implements Node, Serializable, Runnable {
 
     @Override
     public Connection connect(String ip, int port) {
-        return null;
+        Socket socket = null;
+        ObjectInputStream in = null;
+        ObjectOutputStream out = null;
+
+        try {
+            socket = new Socket(ip, port);
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new Connection(socket, in, out);
     }
 
     @Override
     public void disconnect(Connection connection) {
-
+        try {
+            connection.in.close();
+            connection.out.close();
+            connection.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
