@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public interface Node {
 
-    void init(String ip, int port);
+    void init();
 
     ArrayList<Broker> getBrokers();
 

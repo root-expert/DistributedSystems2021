@@ -27,6 +27,11 @@ public class Broker implements Node, Serializable, Runnable {
         this.config = config;
     }
 
+    @Override
+    public void init() {
+
+    }
+
     public void calculateKeys() {
 
     }
@@ -52,11 +57,6 @@ public class Broker implements Node, Serializable, Runnable {
     }
 
     public void filterConsumers(String consumer) {
-
-    }
-
-    @Override
-    public void init(String ip, int port) {
 
     }
 

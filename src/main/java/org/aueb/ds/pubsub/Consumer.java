@@ -18,14 +18,9 @@ public class Consumer extends AppNode implements Runnable {
     /**
      * Initializes Consumer's state. Connects to the first Broker
      * retrieving the rest of the Brokers.
-     *
-     * @param ip   The IP of the Consumer.
-     * @param port The port of the Consumer to listen for connections.
      */
     @Override
-    public void init(String ip, int port) {
-        super.init(ip, port);
-
+    public void init() {
         Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
 
         try {

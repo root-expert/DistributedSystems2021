@@ -23,7 +23,7 @@ public class AppNode implements Node {
     }
 
     @Override
-    public void init(String ip, int port) {
+    public void init() {
 
     }
 
