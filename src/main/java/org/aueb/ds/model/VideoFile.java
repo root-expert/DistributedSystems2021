@@ -5,14 +5,40 @@ import java.util.ArrayList;
 
 public class VideoFile implements Serializable {
 
-    String videoName;
-    String channelName;
-    String dateCreated;
-    String length;
-    String framerate;
-    String frameWidth;
-    String frameHeight;
-    ArrayList<String> associatedHashtags;
-    byte[] videoFileChunk;
+    public String videoName;
+    public String channelName;
+    public String dateCreated;
+    public String length;
+    public String framerate;
+    public String frameWidth;
+    public String frameHeight;
+    public ArrayList<String> associatedHashtags;
+    public byte[] videoFileChunk;
 
+    /**
+     * Constructor
+     * 
+     * @param name     String video name
+     * @param channel  String channel name
+     * @param date     String Creation date of the video
+     * @param duration String video duration
+     * @param rate     String video frame rate
+     * @param height   String video display height in pixels
+     * @param width    String video display width in pixels
+     * @param hashtag  ArrayList<String> hashtags that are relevant to the video
+     * @param video    byte[] bytes of video
+     */
+    public VideoFile(String name, String channel, String date, String duration, String rate, String height,
+            String width, ArrayList<String> hashtag, byte[] video) {
+        this.videoName = name;
+        this.channelName = channel;
+        this.dateCreated = date;
+        this.length = duration;
+        this.framerate = rate;
+        this.frameHeight = height;
+        this.frameWidth = width;
+        this.associatedHashtags = hashtag;
+        this.videoFileChunk = video;
+
+    }
 }

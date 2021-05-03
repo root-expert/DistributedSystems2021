@@ -26,3 +26,15 @@ hs_err_pid*
 
 .idea
 *.iml
+*.mp4
+.gradle/
+
+.settings
+.vscode/
+
+build/tmp/
+
+bin/
+
+.classpath
+.project
