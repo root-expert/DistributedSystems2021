@@ -199,7 +199,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(name, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags,len, chunk);
                 video.add(videoChunk);
                 videoChunk = new Value();
             }
@@ -217,7 +217,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(tempName.replace(".mp4", ""), this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len , chunk);
                 video.add(videoChunk);
             }
             // Add chunked viedo in the channel name video hashmap for later use,and return

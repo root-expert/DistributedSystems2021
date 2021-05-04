@@ -12,6 +12,7 @@ public class VideoFile implements Serializable {
     public String framerate;
     public String frameWidth;
     public String frameHeight;
+    public int numOfBytes;
     public ArrayList<String> associatedHashtags;
     public byte[] videoFileChunk;
 
@@ -26,10 +27,11 @@ public class VideoFile implements Serializable {
      * @param height   String video display height in pixels
      * @param width    String video display width in pixels
      * @param hashtag  ArrayList<String> hashtags that are relevant to the video
+     * @param numOfBytes int number of bytes in video file
      * @param video    byte[] bytes of video
      */
     public VideoFile(String name, String channel, String date, String duration, String rate, String height,
-            String width, ArrayList<String> hashtag, byte[] video) {
+            String width, ArrayList<String> hashtag, int size, byte[] video) {
         this.videoName = name;
         this.channelName = channel;
         this.dateCreated = date;
@@ -38,6 +40,7 @@ public class VideoFile implements Serializable {
         this.frameHeight = height;
         this.frameWidth = width;
         this.associatedHashtags = hashtag;
+        this.numOfBytes=size;
         this.videoFileChunk = video;
 
     }

@@ -57,7 +57,7 @@ public class Broker implements Node, Serializable, Runnable {
          * name matches the topic or is a hashtag that the Publisher has content of
          */
         for (Publisher pu : publisherAssociatedHashtags.keySet()) {
-            if (publisherAssociatedHashtags.get(pu).contains(topic) | pu.getChannelName().channelName.equals(topic)) {
+            if (publisherAssociatedHashtags.get(pu).contains(topic) || pu.getChannelName().channelName.equals(topic)) {
                 try {
                     connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
                     connection.out.writeUTF("notify");
