@@ -50,7 +50,30 @@ public class Broker implements Node, Serializable, Runnable {
     }
 
     public void notifyPublisher(String topic) {
-
+        // if at least one publisher is related to the topic
+        Connection connection = null;
+        /**
+         * For every publisher that is affiliated with the broker, either if the channel
+         * name matches the topic or is a hashtag that the Publisher has content of
+         */
+        for (Publisher pu : publisherAssociatedHashtags.keySet()) {
+            if (publisherAssociatedHashtags.get(pu).contains(topic) | pu.getChannelName().channelName.equals(topic)) {
+                try {
+                    connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
+                    connection.out.writeUTF("notify");
+                    connection.out.writeUTF(topic);
+                    connection.out.flush();
+                    int exitCode = connection.in.readInt();
+                    if (exitCode == 0) {
+                        // TODO: Change pull paqrameters
+                        pull(topic);
+                    }
+                    disconnect(connection);
+                } catch (IOException io) {
+                    System.out.println("Error: there was problem in input/output: " + io.getMessage());
+                }
+            }
+        }
     }
 
     public void notifyBrokersOnChanges() {
