@@ -12,14 +12,19 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
-    private ChannelName channelName = new ChannelName(UUID.randomUUID().toString()); // TODO: Change me
+    private ChannelName channelName;
 
     public Publisher(AppNodeConfig conf) {
         super(conf);
+    }
+
+
+    @Override
+    public void init() {
+        channelName = new ChannelName(config.getChannelName());
     }
 
     /**
