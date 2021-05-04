@@ -4,6 +4,7 @@ import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
+import org.aueb.ds.util.Hashing;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 
 public class Broker implements Node, Serializable, Runnable {
 
@@ -24,7 +26,7 @@ public class Broker implements Node, Serializable, Runnable {
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
-    protected String hash = null;
+    protected String hash;
 
     public Broker(BrokerConfig config) {
         this.config = config;
@@ -32,7 +34,9 @@ public class Broker implements Node, Serializable, Runnable {
 
     @Override
     public void init() {
+        this.hash = new Hashing().md5Hash(config.getIp() + config.getPort());
 
+        brokerAssociatedHashtags.put(this, new ArrayList<>());
     }
 
     public void calculateKeys() {
@@ -75,8 +79,29 @@ public class Broker implements Node, Serializable, Runnable {
         }
     }
 
+    /**
+     * Notifies the rest of the brokers for changes
+     * on the hashtags this specific broker is
+     * responsible for.
+     */
     public void notifyBrokersOnChanges() {
+        for (Broker broker : brokerAssociatedHashtags.keySet()) {
+            if (broker.hash.equals(this.hash))
+                continue;
 
+            Connection connection = connect(broker.config.getIp(), broker.config.getPort());
+
+            try {
+                connection.out.writeUTF("notifyNewHashtags");
+                connection.out.writeUTF(hash);
+                connection.out.writeObject(brokerAssociatedHashtags.get(this));
+                connection.out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                disconnect(connection);
+            }
+        }
     }
 
     /**
@@ -161,7 +186,23 @@ public class Broker implements Node, Serializable, Runnable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Broker broker = (Broker) o;
+        return hash.equals(broker.hash);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(hash);
+    }
+
+    @Override
     public void run() {
+        // Run initialization before accepting requests
+        init();
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPort());
 
