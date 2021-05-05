@@ -14,14 +14,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 
 public class Broker implements Node, Serializable, Runnable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
-    private HashMap<Broker, List<String>> brokerAssociatedHashtags = new HashMap<>();
     private HashMap<String, ArrayList<Value>> videoList = new HashMap<>();
+    private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
     protected String hash = null;
@@ -55,7 +55,8 @@ public class Broker implements Node, Serializable, Runnable {
          * name matches the topic or is a hashtag that the Publisher has content of
          */
         for (Publisher pu : registeredPublishers) {
-            if (pu.getChannelName().hashtagsPublished.contains(topic) || pu.getChannelName().channelName.equals(topic)) {
+            if (pu.getChannelName().hashtagsPublished.contains(topic)
+                    || pu.getChannelName().channelName.equals(topic)) {
                 try {
                     connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
                     connection.out.writeUTF("notify");
@@ -64,7 +65,7 @@ public class Broker implements Node, Serializable, Runnable {
                     int exitCode = connection.in.readInt();
                     if (exitCode == 0) {
                         // TODO: Change pull paqrameters
-                        pull(topic);
+                        pull(pu,topic);
                     }
                     disconnect(connection);
                 } catch (IOException io) {
@@ -212,7 +213,7 @@ public class Broker implements Node, Serializable, Runnable {
                     }
                     if (toBeRemoved != null) {
                         broker.registeredPublishers.remove(toBeRemoved);
-                    }else{
+                    } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
                 } else if (action.equals("AddHashTag")) {

@@ -12,6 +12,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
+
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -160,7 +162,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             }
             // Seperate the name from the hashtags
             String[] args = tempName.replace(".mp4", "").split("#");
-            ArrayList<String> hashtags = new ArrayList<String>();
+            HashSet<String> hashtags = new HashSet<String>();
             String name = args[0];
             for (int i = 1; i < args.length; i++) {
                 hashtags.add("#" + args[i]);
@@ -213,7 +215,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     chunk[cByte] = fullVideo[bins * chunkSize + cByte];
                 }
                 // Create the Value objects and add them to the video ArrayList
-                videoChunk.videoFile = new VideoFile(name + "_" + bins + 1, this.channelName.channelName,
+                videoChunk.videoFile = new VideoFile(name + "_" + bins, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
                         metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
                 video.add(videoChunk);
