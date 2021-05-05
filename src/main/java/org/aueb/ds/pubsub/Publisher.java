@@ -12,7 +12,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Random;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -61,15 +63,14 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @return The broker which is responsible for the specified topic.
      */
     public Broker hashTopic(String topic) {
-        Hashing hashing = new Hashing();
-
-        String hashedTopic = hashing.md5Hash(topic);
+        String hashedTopic = new Hashing().md5Hash(topic);
 
         ArrayList<Broker> brokers = this.getBrokers();
+        Collections.sort(brokers);
         Broker selected = null;
+
         for (Broker broker : brokers) {
-            // TODO: Cover all cases
-            switch (broker.hash.compareTo(hashedTopic)) {
+            switch (hashedTopic.compareTo(broker.hash)) {
                 case -1:
                 case 0:
                     selected = broker;
@@ -77,6 +78,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 case 1:
             }
         }
+
+        if (selected == null)
+            selected = brokers.get(new Random().nextInt(brokers.size()));
+
         return selected;
     }
 
