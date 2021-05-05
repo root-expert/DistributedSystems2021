@@ -49,9 +49,6 @@ public class Consumer extends AppNode implements Runnable {
         Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
         try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
             connection.out.writeUTF("subscribe");
             connection.out.writeUTF(topic);
             connection.out.flush();
@@ -73,9 +70,6 @@ public class Consumer extends AppNode implements Runnable {
         Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
         try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
             connection.out.writeUTF("unsubscribe");
             connection.out.writeUTF(topic);
             connection.out.flush();

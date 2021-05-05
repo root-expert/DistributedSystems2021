@@ -6,8 +6,6 @@ import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -67,9 +65,6 @@ public class Broker implements Node, Serializable, Runnable {
 
         Connection connection = connect(publisher.config.getIp(), publisher.config.getPublisherPort());
         try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
-
             connection.out.writeUTF("push");
             connection.out.writeUTF(topic);
             connection.out.flush();
