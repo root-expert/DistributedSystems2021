@@ -31,39 +31,14 @@ public class Value implements Serializable, Comparable<Value> {
     public Value() {
     }
 
-    ;
-
 
     @Override
     /**
      * Compares Value objects based on videoName.
-     * Helps to order the chunk files.
      *
      * @param v The Value object to compare to
      */
     public int compareTo(Value v) {
-        StringBuilder thisIndex = new StringBuilder();
-        StringBuilder vIndex = new StringBuilder();
-        boolean found = false;
-
-        for (char c : this.videoFile.videoName.toCharArray()) {
-            if (Character.isDigit(c)) {
-                thisIndex.append(c);
-                found = true;
-            } else if (found) {
-                break;
-            }
-        }
-        found = false;
-
-        for (char c : v.videoFile.videoName.toCharArray()) {
-            if (Character.isDigit(c)) {
-                vIndex.append(c);
-                found = true;
-            } else if (found) {
-                break;
-            }
-        }
-        return thisIndex.compareTo(vIndex);
+        return this.videoFile.videoName.compareTo(v.videoFile.videoName);
     }
 }
