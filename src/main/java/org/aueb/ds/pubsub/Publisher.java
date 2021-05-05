@@ -127,8 +127,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             } else {
                 connection.out.writeUTF("RemoveHashTag");
             }
-
-            connection.out.writeUTF(channelName.channelName);
             connection.out.writeUTF(hashtag);
             connection.out.flush();
         } catch (IOException e) {
@@ -197,9 +195,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     chunk[cByte] = fullVideo[cByte + currentbin * chunkSize];
                 }
                 // Create the Value objects and add them to the video ArrayList
-                videoChunk.videoFile = new VideoFile(name, this.channelName.channelName,
+                videoChunk.videoFile = new VideoFile(name + "_" + currentbin, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags,len, chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
                 video.add(videoChunk);
                 videoChunk = new Value();
             }
@@ -215,9 +213,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     chunk[cByte] = fullVideo[bins * chunkSize + cByte];
                 }
                 // Create the Value objects and add them to the video ArrayList
-                videoChunk.videoFile = new VideoFile(tempName.replace(".mp4", ""), this.channelName.channelName,
+                videoChunk.videoFile = new VideoFile(name + "_" + bins + 1, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len , chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
                 video.add(videoChunk);
             }
             // Add chunked viedo in the channel name video hashmap for later use,and return
@@ -227,7 +225,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     addHashTag(h);
                 }
             }
-            channelName.userVideoFilesMap.put(tempName.replace(".mp4", "").split("#")[0], video);
+            channelName.userVideoFilesMap.put(name.replace(".mp4", "").split("#")[0], video);
             raf.close();
         } catch (FileNotFoundException f) {
             System.out.println("Error: could not find file: " + f.getMessage());
@@ -386,7 +384,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                 exitCode = 0;
                             }
                         }
-                        if(exitCode==-1){
+                        if (exitCode == -1) {
                             /**
                              * Searches into it's designated file for new videos, so that is can check in
                              * the latest data if it finds new videos it splits them into chunks and adds
@@ -399,8 +397,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                     if (!publisher.channelName.userVideoFilesMap
                                             .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
                                         publisher.generateChunks(f.getName());
-                                        if(f.getName().contains(topic)){
-                                            exitCode=0;
+                                        if (f.getName().contains(topic)) {
+                                            exitCode = 0;
                                         }
                                     }
                                 }
@@ -413,8 +411,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                 exitCode = 0;
                             } else {
                                 // Error code if the channel doesn't have any videos\
-                                exitCode=-1;
-                                 /**
+                                exitCode = -1;
+                                /**
                                  * Searches into it's designated file for new videos, so that is can check in
                                  * the latest data if it finds new videos it splits them into chunks and adds
                                  * them into the user's available videos
@@ -426,7 +424,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                         if (!publisher.channelName.userVideoFilesMap
                                                 .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
                                             publisher.generateChunks(f.getName());
-                                            exitCode=0;
+                                            exitCode = 0;
                                         }
                                     }
                                 }
@@ -439,8 +437,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     out.writeInt(exitCode);
                     out.flush();
                 }
-                in.close();
-                out.close();
+                if (in != null)
+                    in.close();
+                if (out != null)
+                    out.close();
             } catch (IOException io) {
                 System.out.println("Error in input or output: " + io.getMessage());
             }

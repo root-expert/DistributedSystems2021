@@ -20,8 +20,6 @@ public class Broker implements Node, Serializable, Runnable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
-
-    private HashMap<Publisher, List<String>> publisherAssociatedHashtags = new HashMap<>();
     private HashMap<Broker, List<String>> brokerAssociatedHashtags = new HashMap<>();
     private HashMap<String, ArrayList<Value>> videoList = new HashMap<>();
 
@@ -56,8 +54,8 @@ public class Broker implements Node, Serializable, Runnable {
          * For every publisher that is affiliated with the broker, either if the channel
          * name matches the topic or is a hashtag that the Publisher has content of
          */
-        for (Publisher pu : publisherAssociatedHashtags.keySet()) {
-            if (publisherAssociatedHashtags.get(pu).contains(topic) || pu.getChannelName().channelName.equals(topic)) {
+        for (Publisher pu : registeredPublishers) {
+            if (pu.getChannelName().hashtagsPublished.contains(topic) || pu.getChannelName().channelName.equals(topic)) {
                 try {
                     connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
                     connection.out.writeUTF("notify");
@@ -145,12 +143,12 @@ public class Broker implements Node, Serializable, Runnable {
     @Override
     public void disconnect(Connection connection) {
         try {
-            if(connection.in!=null)
+            if (connection.in != null)
                 connection.in.close();
-            if(connection.out!=null)
-            connection.out.close();
-            if(connection.socket!=null)
-            connection.socket.close();
+            if (connection.out != null)
+                connection.out.close();
+            if (connection.socket != null)
+                connection.socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -187,7 +185,64 @@ public class Broker implements Node, Serializable, Runnable {
 
         @Override
         public void run() {
-            // Handle Broker, Publisher, Consumer requests
+            try {
+                // Initaialising output and input streams
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+                // Reading the action required
+                String action = in.readUTF();
+                if (action.equals("connectP")) {
+                    // recieve the object that wants to be connected
+                    Publisher pu = (Publisher) in.readObject();
+                    // Check if the channel name already exists in the registered publishers
+                    for (Publisher p : broker.registeredPublishers) {
+                        if (p.getChannelName().channelName.equals(pu.getChannelName().channelName))
+                            throw new Exception("There exist a publisher with the same name");
+                    }
+                    // Add Publishers to the registered publishers and update on the publishers
+                    broker.registeredPublishers.add(pu);
+                } else if (action.equals("disconnectP")) {
+                    String cn = in.readUTF();
+                    Publisher toBeRemoved = null;
+                    for (Publisher pu : broker.registeredPublishers) {
+                        if (pu.getChannelName().channelName.equals(cn)) {
+                            toBeRemoved = pu;
+                        }
+                    }
+                    if (toBeRemoved != null) {
+                        broker.registeredPublishers.remove(toBeRemoved);
+                    }else{
+                        throw new Exception("There doesn't exist a publisher with that channel name");
+                    }
+                } else if (action.equals("AddHashTag")) {
+                    // Recieve the topic and its corresponding channel name
+                    String topic = in.readUTF();
+                    // if it does not already exist in this broker's hashmaps
+                    if (!broker.brokerAssociatedHashtags.get(broker).contains(topic))
+                        broker.brokerAssociatedHashtags.get(broker).add(topic);
+
+                } else if (action.equals("RemoveHashTag")) {
+                    String topic = in.readUTF();
+                    if (broker.brokerAssociatedHashtags.get(broker).contains(topic))
+                        broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                }
+                if (out != null)
+                    out.close();
+                if (in != null)
+                    in.close();
+                if (socket != null)
+                    socket.close();
+            } catch (ClassNotFoundException cf) {
+                System.out.println("Error: invalid cast" + cf.getMessage());
+            } catch (NullPointerException nu) {
+                System.out.println("Error:Innappropriate connection object, connection failed" + nu.getMessage());
+
+            } catch (IOException io) {
+                System.out.println("Error: problem in input/output" + io.getMessage());
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 }
