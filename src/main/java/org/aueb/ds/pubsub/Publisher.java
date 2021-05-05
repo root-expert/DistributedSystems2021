@@ -147,7 +147,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public ArrayList<Value> generateChunks(String filename) {
         ArrayList<Value> video = null;
-        final int chunkSize = 10 * 1024;
+        final int chunkSize = 512 * 1024;
 
         // if the video is already contained in the channel name's video hashmap then it
         // is already chunked
