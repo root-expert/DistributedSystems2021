@@ -14,7 +14,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-
 public class Publisher extends AppNode implements Runnable, Serializable {
 
     private ChannelName channelName;
@@ -84,10 +83,26 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     /**
      * Pushes data to the specified topic
      *
-     * @param topic Topic to push data.
-     * @param value Data to push.
+     * @param connection The Connection object to send data on top of it.
+     * @param videos     Videos to be send.
      */
-    public void push(String topic, Value value) {
+    public void push(Connection connection, HashSet<String> videos) throws IOException {
+        /* if there are videos to be sent send 0 as a success code.
+         * Also send how many video we are ready to send.
+         */
+        connection.out.writeInt(0);
+        connection.out.writeInt(videos.size());
+        connection.out.flush();
+
+        for (String filename : videos) {
+            ArrayList<Value> chunks = channelName.userVideoFilesMap.get(filename);
+            // Send the number of chunks
+            connection.out.writeInt(chunks.size());
+            for (Value chunk : chunks)
+                connection.out.writeObject(chunk);
+
+            connection.out.flush();
+        }
     }
 
     public ChannelName getChannelName() {
@@ -292,8 +307,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     }
 
     private static class Handler implements Runnable {
-        private Socket socket;
-        private Publisher publisher;
+        private final Socket socket;
+        private final Publisher publisher;
 
         public Handler(Socket socket, Publisher publisher) {
             this.socket = socket;
@@ -305,10 +320,12 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             ObjectOutputStream out;
             ObjectInputStream in;
             try {
-                out = new ObjectOutputStream(this.socket.getOutputStream());
                 // Initialising input and output streams
+                out = new ObjectOutputStream(this.socket.getOutputStream());
                 in = new ObjectInputStream(this.socket.getInputStream());
-                // recieving an action string from the broker
+                Connection connection = new Connection(socket, in, out);
+
+                // receiving an action string from the broker
                 String action = in.readUTF();
                 // if the requested action is a pull action
                 if (action.equals("push")) {
@@ -318,7 +335,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     // if it is a hashtag
                     if (topic.startsWith("#")) {
                         // filenames to push
-                        ArrayList<String> toSend = new ArrayList<String>();
+                        HashSet<String> toSend = new HashSet<>();
 
                         // for every hashtag in the user's videos
                         for (String filename : cn.userVideoFilesMap.keySet()) {
@@ -327,7 +344,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
                             /*
                              * If the required hashtag is found, then we add the video name in the list of
-                             * videos topush
+                             * videos to push
                              */
                             if (sample.videoFile.associatedHashtags.contains(topic)) {
                                 toSend.add(filename);
@@ -338,31 +355,15 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             out.writeInt(-1);
                             out.flush();
                         } else {
-                            // if videos are to be sent send 0 as a success code
-                            out.writeInt(0);
-                            out.flush();
-
-                            // Push every chunk of the video
-                            for (String filename : toSend) {
-                                for (Value chunk : cn.userVideoFilesMap.get(filename)) {
-                                    publisher.push(topic, chunk);
-                                }
-                            }
+                            publisher.push(connection, toSend);
                         }
                         // search hashtags
                     } else {
                         // if it's a channel name, every video of the publisher is pushed
                         if (cn.channelName.equals(topic)) {
                             if (!cn.userVideoFilesMap.isEmpty()) {
-                                // if videos are to be sent send 0 as a success code
-                                out.writeInt(0);
-                                out.flush();
-                                // Push every video the channel has
-                                for (String filename : cn.userVideoFilesMap.keySet()) {
-                                    for (Value videoChunk : cn.userVideoFilesMap.get(filename)) {
-                                        publisher.push(topic, videoChunk);
-                                    }
-                                }
+                                HashSet<String> videos = new HashSet<>(cn.userVideoFilesMap.keySet());
+                                publisher.push(connection, videos);
                             } else {
                                 // Error code if the channel doesn't have any videos
                                 out.writeInt(-1);
@@ -439,10 +440,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     out.writeInt(exitCode);
                     out.flush();
                 }
-                if (in != null)
-                    in.close();
-                if (out != null)
-                    out.close();
+                in.close();
+                out.close();
+                socket.close();
             } catch (IOException io) {
                 System.out.println("Error in input or output: " + io.getMessage());
             }
