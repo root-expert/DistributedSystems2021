@@ -2,13 +2,17 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
+import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -19,6 +23,7 @@ public class Broker implements Node, Serializable, Runnable {
 
     private HashMap<Publisher, List<String>> publisherAssociatedHashtags = new HashMap<>();
     private HashMap<Broker, List<String>> brokerAssociatedHashtags = new HashMap<>();
+    private HashMap<String, ArrayList<Value>> videoList = new HashMap<>();
 
     protected BrokerConfig config;
     protected String hash = null;
@@ -52,8 +57,43 @@ public class Broker implements Node, Serializable, Runnable {
 
     }
 
-    public void pull(String topic) {
+    /**
+     * Pulls data of a specified topic
+     *
+     * @param topic The channelName or hashTag to pull data
+     */
+    public void pull(Publisher publisher, String topic) {
+        ArrayList<Value> chunkList = new ArrayList<>();
 
+        Connection connection = connect(publisher.config.getIp(), publisher.config.getPublisherPort());
+        try {
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+
+            connection.out.writeUTF("push");
+            connection.out.writeUTF(topic);
+            connection.out.flush();
+
+            if (connection.in.readInt() == 0) {
+                int numOfVideos = connection.in.readInt();
+                for (int i = 1; i <= numOfVideos; i++) {
+                    int numOfChunks = connection.in.readInt();
+                    chunkList.clear();
+                    for (int j = 1; j <= numOfChunks; j++) {
+                        chunkList.add((Value) connection.in.readObject());
+                    }
+                    Collections.sort(chunkList);
+                    videoList.put(topic, chunkList);
+                }
+            } else {
+                return;
+            }
+
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            disconnect(connection);
+        }
     }
 
     public void filterConsumers(String consumer) {

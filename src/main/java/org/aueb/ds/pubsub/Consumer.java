@@ -46,7 +46,21 @@ public class Consumer extends AppNode implements Runnable {
      * @param topic  The topic to be subscribed on.
      */
     public void subscribe(Broker broker, String topic) {
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+
+            connection.out.writeUTF("subscribe");
+            connection.out.writeUTF(topic);
+            connection.out.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            super.disconnect(connection);
+        }
     }
 
     /**
@@ -56,7 +70,21 @@ public class Consumer extends AppNode implements Runnable {
      * @param topic  The topic to unsubscribe from.
      */
     public void unsubscribe(Broker broker, String topic) {
+        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
 
+        try {
+            connection.in = new ObjectInputStream(connection.socket.getInputStream());
+            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+
+            connection.out.writeUTF("unsubscribe");
+            connection.out.writeUTF(topic);
+            connection.out.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            super.disconnect(connection);
+        }
     }
 
     public void playData(String topic, Value value) {
