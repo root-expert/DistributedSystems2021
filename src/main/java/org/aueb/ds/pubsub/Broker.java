@@ -145,8 +145,11 @@ public class Broker implements Node, Serializable, Runnable {
     @Override
     public void disconnect(Connection connection) {
         try {
-            connection.in.close();
+            if(connection.in!=null)
+                connection.in.close();
+            if(connection.out!=null)
             connection.out.close();
+            if(connection.socket!=null)
             connection.socket.close();
         } catch (IOException e) {
             e.printStackTrace();

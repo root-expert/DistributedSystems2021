@@ -161,7 +161,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 tempName += ".mp4";
             }
             // Seperate the name from the hashtags
-            String[] args = tempName.replace(".mp4", "").split("_");
+            String[] args = tempName.replace(".mp4", "").split("#");
             ArrayList<String> hashtags = new ArrayList<String>();
             String name = args[0];
             for (int i = 1; i < args.length; i++) {
@@ -227,7 +227,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     addHashTag(h);
                 }
             }
-            channelName.userVideoFilesMap.put(tempName.replace(".mp4", "").split("_")[0], video);
+            channelName.userVideoFilesMap.put(tempName.replace(".mp4", "").split("#")[0], video);
             raf.close();
         } catch (FileNotFoundException f) {
             System.out.println("Error: could not find file: " + f.getMessage());
@@ -378,26 +378,32 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     int exitCode = -1;
                     String topic = in.readUTF();
                     ChannelName cn = publisher.channelName;
-                    /**
-                     * Searches into it's designated file for new videos, so that is can check in
-                     * the latest data if it finds new videos it splits them into chunks and adds
-                     * them into the user's available videos
-                     */
-                    File folder = new File(System.getProperty("user.dir"));
-                    // TODO: assign appropriate file
-                    for (File f : folder.listFiles()) {
-                        if (f.getName().contains(".mp4")) {
-                            if (!publisher.channelName.userVideoFilesMap
-                                    .containsKey(f.getName().replace(".mp4", "").split("-")[0])) {
-                                publisher.generateChunks(f.getName());
-                            }
-                        }
-                    }
+
                     if (topic.startsWith("#")) {
                         for (String i : cn.userVideoFilesMap.keySet()) {
                             // If there are videos that the Broker can pull related to this hashtag
                             if (cn.userVideoFilesMap.get(i).get(0).videoFile.associatedHashtags.contains(topic)) {
                                 exitCode = 0;
+                            }
+                        }
+                        if(exitCode==-1){
+                            /**
+                             * Searches into it's designated file for new videos, so that is can check in
+                             * the latest data if it finds new videos it splits them into chunks and adds
+                             * them into the user's available videos
+                             */
+                            File folder = new File(System.getProperty("user.dir"));
+                            // TODO: assign appropriate file
+                            for (File f : folder.listFiles()) {
+                                if (f.getName().contains(".mp4")) {
+                                    if (!publisher.channelName.userVideoFilesMap
+                                            .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
+                                        publisher.generateChunks(f.getName());
+                                        if(f.getName().contains(topic)){
+                                            exitCode=0;
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -406,8 +412,24 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             if (!cn.userVideoFilesMap.isEmpty()) {
                                 exitCode = 0;
                             } else {
-                                // Error code if the channel doesn't have any videos
-                                exitCode = -1;
+                                // Error code if the channel doesn't have any videos\
+                                exitCode=-1;
+                                 /**
+                                 * Searches into it's designated file for new videos, so that is can check in
+                                 * the latest data if it finds new videos it splits them into chunks and adds
+                                 * them into the user's available videos
+                                 */
+                                File folder = new File(System.getProperty("user.dir"));
+                                // TODO: assign appropriate file
+                                for (File f : folder.listFiles()) {
+                                    if (f.getName().contains(".mp4")) {
+                                        if (!publisher.channelName.userVideoFilesMap
+                                                .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
+                                            publisher.generateChunks(f.getName());
+                                            exitCode=0;
+                                        }
+                                    }
+                                }
                             }
                         } else {
                             // Error code if the channel name is not this Publisher's
