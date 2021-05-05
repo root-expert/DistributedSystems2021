@@ -65,7 +65,7 @@ public class Broker implements Node, Serializable, Runnable {
                     int exitCode = connection.in.readInt();
                     if (exitCode == 0) {
                         // TODO: Change pull paqrameters
-                        pull(pu,topic);
+                        pull(pu, topic);
                     }
                     disconnect(connection);
                 } catch (IOException io) {
@@ -194,7 +194,7 @@ public class Broker implements Node, Serializable, Runnable {
                 // Reading the action required
                 String action = in.readUTF();
                 if (action.equals("connectP")) {
-                    // recieve the object that wants to be connected
+                    // Receive the object that wants to be connected
                     Publisher pu = (Publisher) in.readObject();
                     // Check if the channel name already exists in the registered publishers
                     for (Publisher p : broker.registeredPublishers) {
@@ -204,30 +204,36 @@ public class Broker implements Node, Serializable, Runnable {
                     // Add Publishers to the registered publishers and update on the publishers
                     broker.registeredPublishers.add(pu);
                 } else if (action.equals("disconnectP")) {
+                    // Receive the channel to remove from the registered publishers
                     String cn = in.readUTF();
                     Publisher toBeRemoved = null;
+                    // Search for the correct publisher
                     for (Publisher pu : broker.registeredPublishers) {
                         if (pu.getChannelName().channelName.equals(cn)) {
                             toBeRemoved = pu;
                         }
                     }
+                    // If a channel to be removed has been found removes it
                     if (toBeRemoved != null) {
                         broker.registeredPublishers.remove(toBeRemoved);
                     } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
                 } else if (action.equals("AddHashTag")) {
-                    // Recieve the topic and its corresponding channel name
+                    // Receive the topic to add into the broker (if it doesn't already exist)
                     String topic = in.readUTF();
-                    // if it does not already exist in this broker's hashmaps
+                    // if it does not already exist in this broker's collection add it
                     if (!broker.brokerAssociatedHashtags.get(broker).contains(topic))
                         broker.brokerAssociatedHashtags.get(broker).add(topic);
 
                 } else if (action.equals("RemoveHashTag")) {
+                    // Receive the topic to remove from the broker (if it exists)
                     String topic = in.readUTF();
+                    // if it exists in this broker's collection remove it
                     if (broker.brokerAssociatedHashtags.get(broker).contains(topic))
                         broker.brokerAssociatedHashtags.get(broker).remove(topic);
                 }
+                // Close streams if defined
                 if (out != null)
                     out.close();
                 if (in != null)
