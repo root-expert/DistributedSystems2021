@@ -50,6 +50,7 @@ public class Consumer extends AppNode implements Runnable {
 
         try {
             connection.out.writeUTF("subscribe");
+            connection.out.writeObject(this);
             connection.out.writeUTF(topic);
             connection.out.flush();
 
@@ -71,6 +72,7 @@ public class Consumer extends AppNode implements Runnable {
 
         try {
             connection.out.writeUTF("unsubscribe");
+            connection.out.writeObject(this);
             connection.out.writeUTF(topic);
             connection.out.flush();
 
