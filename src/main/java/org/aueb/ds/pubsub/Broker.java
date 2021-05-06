@@ -265,16 +265,14 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     // Receive the topic to add into the broker (if it doesn't already exist)
                     String topic = in.readUTF();
                     // if it does not already exist in this broker's collection add it
-                    if (!broker.brokerAssociatedHashtags.get(broker).contains(topic))
-                        broker.brokerAssociatedHashtags.get(broker).add(topic);
+                    broker.brokerAssociatedHashtags.get(broker).add(topic);
                     broker.notifyBrokersOnChanges();
 
                 } else if (action.equals("RemoveHashTag")) {
                     // Receive the topic to remove from the broker (if it exists)
                     String topic = in.readUTF();
                     // if it exists in this broker's collection remove it
-                    if (broker.brokerAssociatedHashtags.get(broker).contains(topic))
-                        broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                    broker.brokerAssociatedHashtags.get(broker).remove(topic);
                     broker.notifyBrokersOnChanges();
                 }
                 // Close streams if defined
