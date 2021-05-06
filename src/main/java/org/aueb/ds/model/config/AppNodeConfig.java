@@ -21,6 +21,9 @@ public class AppNodeConfig extends Config {
     @JsonProperty("channel_name")
     private String channelName;
 
+    @JsonProperty("videos_path")
+    private String videosPath;
+
     public String getIp() {
         return ip;
     }
@@ -67,6 +70,14 @@ public class AppNodeConfig extends Config {
 
     public void setChannelName(String channelName) {
         this.channelName = channelName;
+    }
+
+    public String getVideosPath() {
+        return videosPath;
+    }
+
+    public void setVideosPath(String videoPath) {
+        this.videosPath = videoPath;
     }
 
     @Override

@@ -8,3 +8,6 @@ broker_ip: localhost
 broker_port: 24568
 
 channel_name: root-expert
+
+# Path to folder containing video files
+videos_path: '/data/'
