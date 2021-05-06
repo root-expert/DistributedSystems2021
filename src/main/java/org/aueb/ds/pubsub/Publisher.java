@@ -399,13 +399,13 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                         // Add chunked viedo in the channel name video hashmap for later use,and return
                                         // the hashed video
                                         ArrayList<Value> video = publisher.generateChunks(f.getName());
+                                        publisher.channelName.userVideoFilesMap
+                                        .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                         for (String h : video.get(0).videoFile.associatedHashtags) {
                                             if (!publisher.channelName.hashtagsPublished.contains(h)) {
                                                 publisher.addHashTag(h);
                                             }
                                         }
-                                        publisher.channelName.userVideoFilesMap
-                                                .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                         if (f.getName().contains(topic)) {
                                             exitCode = 0;
                                         }
@@ -436,13 +436,13 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                             // return
                                             // the hashed video
                                             ArrayList<Value> video = publisher.generateChunks(f.getName());
+                                            publisher.channelName.userVideoFilesMap
+                                                    .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                             for (String h : video.get(0).videoFile.associatedHashtags) {
                                                 if (!publisher.channelName.hashtagsPublished.contains(h)) {
                                                     publisher.addHashTag(h);
                                                 }
                                             }
-                                            publisher.channelName.userVideoFilesMap
-                                                    .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                             exitCode = 0;
                                         }
                                     }
