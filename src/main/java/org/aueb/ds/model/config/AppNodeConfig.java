@@ -5,14 +5,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class AppNodeConfig extends Config {
 
     private String ip;
+
     @JsonProperty("publisher_port")
     private int publisherPort;
+
     @JsonProperty("consumer_port")
     private int consumerPort;
+
     @JsonProperty("broker_ip")
     private String brokerIP;
+
     @JsonProperty("broker_port")
     private int brokerPort;
+
+    @JsonProperty("channel_name")
+    private String channelName;
 
     public String getIp() {
         return ip;
@@ -52,5 +59,25 @@ public class AppNodeConfig extends Config {
 
     public void setBrokerPort(int brokerPort) {
         this.brokerPort = brokerPort;
+    }
+
+    public String getChannelName() {
+        return channelName;
+    }
+
+    public void setChannelName(String channelName) {
+        this.channelName = channelName;
+    }
+
+    @Override
+    public String toString() {
+        return "AppNodeConfig{" +
+                "ip='" + ip + '\'' +
+                ", publisherPort=" + publisherPort +
+                ", consumerPort=" + consumerPort +
+                ", brokerIP='" + brokerIP + '\'' +
+                ", brokerPort=" + brokerPort +
+                ", channelName='" + channelName + '\'' +
+                '}';
     }
 }

@@ -6,3 +6,5 @@ consumer_port: 23001
 # First Broker IP/Port to connect to
 broker_ip: localhost
 broker_port: 24568
+
+channel_name: root-expert
