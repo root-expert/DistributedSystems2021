@@ -35,6 +35,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         brokerAssociatedHashtags.put(this, new HashSet<>());
     }
 
+    public HashMap<Broker, HashSet<String>> getHashtagInfo() {
+        return brokerAssociatedHashtags;
+    }
+
     public void calculateKeys() {
 
     }

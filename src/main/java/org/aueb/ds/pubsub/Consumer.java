@@ -8,8 +8,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class Consumer extends AppNode implements Runnable {
+
+    private HashMap<Broker, HashSet<String>> HashtagInfo = new HashMap<>();
 
     public Consumer(AppNodeConfig conf) {
         super(conf);
@@ -32,6 +36,12 @@ public class Consumer extends AppNode implements Runnable {
 
             this.setBrokers((ArrayList<Broker>) connection.in.readObject());
             System.out.println("Received broker list");
+
+            connection.out.writeUTF("getHashtagInfo");
+            connection.out.flush();
+
+            HashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
