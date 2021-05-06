@@ -24,7 +24,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         super(conf);
     }
 
-
     @Override
     public void init() {
         channelName = new ChannelName(config.getChannelName());
@@ -92,8 +91,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param videos     Videos to be send.
      */
     public void push(Connection connection, HashSet<String> videos) throws IOException {
-        /* if there are videos to be sent send 0 as a success code.
-         * Also send how many video we are ready to send.
+        /*
+         * if there are videos to be sent send 0 as a success code. Also send how many
+         * video we are ready to send.
          */
         connection.out.writeInt(0);
         connection.out.writeInt(videos.size());
@@ -240,14 +240,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
                 video.add(videoChunk);
             }
-            // Add chunked viedo in the channel name video hashmap for later use,and return
-            // the hashed video
-            for (String h : hashtags) {
-                if (!channelName.hashtagsPublished.contains(h)) {
-                    addHashTag(h);
-                }
-            }
-            channelName.userVideoFilesMap.put(name.replace(".mp4", "").split("#")[0], video);
             raf.close();
         } catch (FileNotFoundException f) {
             System.out.println("Error: could not find file: " + f.getMessage());
@@ -404,7 +396,16 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                 if (f.getName().contains(".mp4")) {
                                     if (!publisher.channelName.userVideoFilesMap
                                             .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
-                                        publisher.generateChunks(f.getName());
+                                        // Add chunked viedo in the channel name video hashmap for later use,and return
+                                        // the hashed video
+                                        ArrayList<Value> video = publisher.generateChunks(f.getName());
+                                        for (String h : video.get(0).videoFile.associatedHashtags) {
+                                            if (!publisher.channelName.hashtagsPublished.contains(h)) {
+                                                publisher.addHashTag(h);
+                                            }
+                                        }
+                                        publisher.channelName.userVideoFilesMap
+                                                .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                         if (f.getName().contains(topic)) {
                                             exitCode = 0;
                                         }
@@ -431,7 +432,17 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                     if (f.getName().contains(".mp4")) {
                                         if (!publisher.channelName.userVideoFilesMap
                                                 .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
-                                            publisher.generateChunks(f.getName());
+                                            // Add chunked viedo in the channel name video hashmap for later use,and
+                                            // return
+                                            // the hashed video
+                                            ArrayList<Value> video = publisher.generateChunks(f.getName());
+                                            for (String h : video.get(0).videoFile.associatedHashtags) {
+                                                if (!publisher.channelName.hashtagsPublished.contains(h)) {
+                                                    publisher.addHashTag(h);
+                                                }
+                                            }
+                                            publisher.channelName.userVideoFilesMap
+                                                    .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                             exitCode = 0;
                                         }
                                     }
