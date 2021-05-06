@@ -6,22 +6,22 @@ import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 
 public class Broker implements Node, Serializable, Runnable {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
-
-    private HashMap<Publisher, List<String>> publisherAssociatedHashtags = new HashMap<>();
-    private HashMap<Broker, List<String>> brokerAssociatedHashtags = new HashMap<>();
     private HashMap<String, ArrayList<Value>> videoList = new HashMap<>();
+    private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
     protected String hash = null;
@@ -48,7 +48,31 @@ public class Broker implements Node, Serializable, Runnable {
     }
 
     public void notifyPublisher(String topic) {
-
+        // if at least one publisher is related to the topic
+        Connection connection = null;
+        /**
+         * For every publisher that is affiliated with the broker, either if the channel
+         * name matches the topic or is a hashtag that the Publisher has content of
+         */
+        for (Publisher pu : registeredPublishers) {
+            if (pu.getChannelName().hashtagsPublished.contains(topic)
+                    || pu.getChannelName().channelName.equals(topic)) {
+                try {
+                    connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
+                    connection.out.writeUTF("notify");
+                    connection.out.writeUTF(topic);
+                    connection.out.flush();
+                    int exitCode = connection.in.readInt();
+                    if (exitCode == 0) {
+                        // TODO: Change pull paqrameters
+                        pull(pu, topic);
+                    }
+                    disconnect(connection);
+                } catch (IOException io) {
+                    System.out.println("Error: there was problem in input/output: " + io.getMessage());
+                }
+            }
+        }
     }
 
     public void notifyBrokersOnChanges() {
@@ -102,12 +126,33 @@ public class Broker implements Node, Serializable, Runnable {
 
     @Override
     public Connection connect(String ip, int port) {
-        return null;
+        Socket socket = null;
+        ObjectInputStream in = null;
+        ObjectOutputStream out = null;
+
+        try {
+            socket = new Socket(ip, port);
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new Connection(socket, in, out);
     }
 
     @Override
     public void disconnect(Connection connection) {
-
+        try {
+            if (connection.in != null)
+                connection.in.close();
+            if (connection.out != null)
+                connection.out.close();
+            if (connection.socket != null)
+                connection.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -141,7 +186,70 @@ public class Broker implements Node, Serializable, Runnable {
 
         @Override
         public void run() {
-            // Handle Broker, Publisher, Consumer requests
+            try {
+                // Initaialising output and input streams
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
+                // Reading the action required
+                String action = in.readUTF();
+                if (action.equals("connectP")) {
+                    // Receive the object that wants to be connected
+                    Publisher pu = (Publisher) in.readObject();
+                    // Check if the channel name already exists in the registered publishers
+                    for (Publisher p : broker.registeredPublishers) {
+                        if (p.getChannelName().channelName.equals(pu.getChannelName().channelName))
+                            throw new Exception("There exist a publisher with the same name");
+                    }
+                    // Add Publishers to the registered publishers and update on the publishers
+                    broker.registeredPublishers.add(pu);
+                } else if (action.equals("disconnectP")) {
+                    // Receive the channel to remove from the registered publishers
+                    String cn = in.readUTF();
+                    Publisher toBeRemoved = null;
+                    // Search for the correct publisher
+                    for (Publisher pu : broker.registeredPublishers) {
+                        if (pu.getChannelName().channelName.equals(cn)) {
+                            toBeRemoved = pu;
+                        }
+                    }
+                    // If a channel to be removed has been found removes it
+                    if (toBeRemoved != null) {
+                        broker.registeredPublishers.remove(toBeRemoved);
+                    } else {
+                        throw new Exception("There doesn't exist a publisher with that channel name");
+                    }
+                } else if (action.equals("AddHashTag")) {
+                    // Receive the topic to add into the broker (if it doesn't already exist)
+                    String topic = in.readUTF();
+                    // if it does not already exist in this broker's collection add it
+                    if (!broker.brokerAssociatedHashtags.get(broker).contains(topic))
+                        broker.brokerAssociatedHashtags.get(broker).add(topic);
+
+                } else if (action.equals("RemoveHashTag")) {
+                    // Receive the topic to remove from the broker (if it exists)
+                    String topic = in.readUTF();
+                    // if it exists in this broker's collection remove it
+                    if (broker.brokerAssociatedHashtags.get(broker).contains(topic))
+                        broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                }
+                // Close streams if defined
+                if (out != null)
+                    out.close();
+                if (in != null)
+                    in.close();
+                if (socket != null)
+                    socket.close();
+            } catch (ClassNotFoundException cf) {
+                System.out.println("Error: invalid cast" + cf.getMessage());
+            } catch (NullPointerException nu) {
+                System.out.println("Error:Innappropriate connection object, connection failed" + nu.getMessage());
+
+            } catch (IOException io) {
+                System.out.println("Error: problem in input/output" + io.getMessage());
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 }
