@@ -64,7 +64,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     connection.out.flush();
                     int exitCode = connection.in.readInt();
                     if (exitCode == 0) {
-                        // TODO: Change pull paqrameters
                         pull(pu, topic);
                     }
                     disconnect(connection);
@@ -76,9 +75,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     /**
-     * Notifies the rest of the brokers for changes
-     * on the hashtags this specific broker is
-     * responsible for.
+     * Notifies the rest of the brokers for changes on the hashtags this specific
+     * broker is responsible for.
      */
     public void notifyBrokersOnChanges() {
         for (Broker broker : brokerAssociatedHashtags.keySet()) {
@@ -183,8 +181,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Broker broker = (Broker) o;
         return hash.equals(broker.hash);
     }
@@ -245,19 +245,42 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     }
                     // Add Publishers to the registered publishers and update on the publishers
                     broker.registeredPublishers.add(pu);
+
+                    // When first connected the broker adds the channel name to its hashset, if it
+                    // doesn't exist already
+                    if (pu.hashTopic(pu.getChannelName().channelName).equals(broker)) {
+                        broker.brokerAssociatedHashtags.get(broker).add(pu.getChannelName().channelName);
+                    }
+
+                    // The broker notifies the other brokers that there is a potential change in its
+                    // hastags
+                    broker.notifyBrokersOnChanges();
                 } else if (action.equals("disconnectP")) {
                     // Receive the channel to remove from the registered publishers
                     String cn = in.readUTF();
                     Publisher toBeRemoved = null;
+
                     // Search for the correct publisher
                     for (Publisher pu : broker.registeredPublishers) {
                         if (pu.getChannelName().channelName.equals(cn)) {
                             toBeRemoved = pu;
                         }
                     }
+
                     // If a channel to be removed has been found removes it
                     if (toBeRemoved != null) {
                         broker.registeredPublishers.remove(toBeRemoved);
+
+                        // When finally disconnecting the broker removes the channel name to its
+                        // hashset, if it doesn't exist already
+                        if (toBeRemoved.hashTopic(toBeRemoved.getChannelName().channelName).equals(broker)) {
+                            broker.brokerAssociatedHashtags.get(broker)
+                                    .remove(toBeRemoved.getChannelName().channelName);
+                        }
+
+                        // The broker notifies the other brokers that there is a potential change in its
+                        // hastags
+                        broker.notifyBrokersOnChanges();
                     } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
