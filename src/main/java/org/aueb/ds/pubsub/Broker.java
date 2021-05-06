@@ -12,11 +12,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
@@ -169,18 +165,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     @Override
     public void disconnect(Connection connection) {
         try {
-<<<<<<< HEAD
-            connection.in.close();
-            connection.out.close();
-            connection.socket.close();
-=======
             if (connection.in != null)
                 connection.in.close();
             if (connection.out != null)
                 connection.out.close();
             if (connection.socket != null)
                 connection.socket.close();
->>>>>>> 0ba23b17b827b172fc7f0b39705ff1fb47dbf235
         } catch (IOException e) {
             e.printStackTrace();
         }
