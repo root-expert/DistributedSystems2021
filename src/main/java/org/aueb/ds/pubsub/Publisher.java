@@ -29,23 +29,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         //Intitialise the channel name object 
         channelName = new ChannelName(config.getChannelName());
 
-        // Connect to the first broker to recieve the broker list
-        Connection connection=connect(config.getBrokerIP(), config.getBrokerPort());
-        try{
-            connection.out=new ObjectOutputStream(connection.socket.getOutputStream());
-            connection.in= new ObjectInputStream(connection.socket.getInputStream());
-            connection.out.writeUTF("getBrokerList");
-            connection.out.flush();
-
-            setBrokers((ArrayList<Broker>)connection.in.readObject());
-            System.out.println("Received broker list");
-        }catch(ClassNotFoundException cf){
-            System.out.println("Error: invalid object cast: "+cf.getMessage());
-        }catch(IOException io){
-            System.out.println("Error in input/output: "+ io.getMessage());
-        }finally{
-            super.disconnect(connection);
-        }
         // Connect to all brokers
         for(Broker broker: getBrokers()){
             connect(broker.config.getIp(), broker.config.getPort());
