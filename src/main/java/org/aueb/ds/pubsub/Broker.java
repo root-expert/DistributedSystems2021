@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 
-public class Broker implements Node, Serializable, Runnable {
+public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
@@ -36,7 +36,7 @@ public class Broker implements Node, Serializable, Runnable {
     public void init() {
         this.hash = new Hashing().md5Hash(config.getIp() + config.getPort());
 
-        brokerAssociatedHashtags.put(this, new ArrayList<>());
+        brokerAssociatedHashtags.put(this, new HashSet<>());
     }
 
     public void calculateKeys() {
@@ -214,6 +214,11 @@ public class Broker implements Node, Serializable, Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public int compareTo(Broker broker) {
+        return this.hash.compareTo(broker.hash);
     }
 
     private static class Handler implements Runnable {
