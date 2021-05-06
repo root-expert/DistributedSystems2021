@@ -245,16 +245,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     }
                     // Add Publishers to the registered publishers and update on the publishers
                     broker.registeredPublishers.add(pu);
-
-                    // When first connected the broker adds the channel name to its hashset, if it
-                    // doesn't exist already
-                    if (pu.hashTopic(pu.getChannelName().channelName).equals(broker)) {
-                        broker.brokerAssociatedHashtags.get(broker).add(pu.getChannelName().channelName);
-                    }
-
-                    // The broker notifies the other brokers that there is a potential change in its
-                    // hastags
-                    broker.notifyBrokersOnChanges();
                 } else if (action.equals("disconnectP")) {
                     // Receive the channel to remove from the registered publishers
                     String cn = in.readUTF();
@@ -271,16 +261,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     if (toBeRemoved != null) {
                         broker.registeredPublishers.remove(toBeRemoved);
 
-                        // When finally disconnecting the broker removes the channel name to its
-                        // hashset, if it doesn't exist already
-                        if (toBeRemoved.hashTopic(toBeRemoved.getChannelName().channelName).equals(broker)) {
-                            broker.brokerAssociatedHashtags.get(broker)
-                                    .remove(toBeRemoved.getChannelName().channelName);
-                        }
-
-                        // The broker notifies the other brokers that there is a potential change in its
-                        // hastags
-                        broker.notifyBrokersOnChanges();
                     } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
