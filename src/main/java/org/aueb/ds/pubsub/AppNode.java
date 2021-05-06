@@ -9,14 +9,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class AppNode implements Node {
 
     private static ArrayList<Broker> brokers = new ArrayList<>();
     protected static AppNodeConfig config;
-
-    public AppNode() {
-    }
+    protected static UUID uuid = UUID.randomUUID();
 
     public AppNode(AppNodeConfig conf) {
         config = conf;
