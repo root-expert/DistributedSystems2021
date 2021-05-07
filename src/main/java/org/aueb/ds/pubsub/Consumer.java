@@ -7,6 +7,8 @@ import org.aueb.ds.model.config.AppNodeConfig;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -129,6 +131,33 @@ public class Consumer extends AppNode implements Runnable {
 
     @Override
     public void run() {
+        init();
 
+        try {
+            ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
+
+            while (true) {
+                Socket socket = serverSocket.accept();
+                Thread handler = new Thread(new Handler(socket, this));
+                handler.start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static class Handler implements Runnable {
+        private final Socket socket;
+        private final Consumer consumer;
+
+        public Handler(Socket socket, Consumer consumer) {
+            this.socket = socket;
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void run() {
+
+        }
     }
 }
