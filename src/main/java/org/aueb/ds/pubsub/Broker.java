@@ -308,11 +308,21 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         try {
                             Consumer subscriber=(Consumer)in.readObject();
                             String topic=in.readUTF();
-                            if(!broker.userHashtags.containsKey(topic)){
-                                broker.userHashtags.put(topic,new HashSet<>());
+                            if (broker.brokerAssociatedHashtags.get(broker).contains(topic)){
+                                // TODO: discuss and implement what happens when a consumer
+                                // TODO: subscribes to a broker they are not registered to
+                                if(!broker.userHashtags.containsKey(topic)){
+                                    broker.userHashtags.put(topic,new HashSet<>());
+                                }
+                                broker.userHashtags.get(topic).add(subscriber);
+                                broker.videoList.clear();
+                                broker.notifyPublisher(topic);
+                                int numberOfVideos=broker.videoList.get(topic).size();
+                                for (Consumer sub:(Consumer[])broker.userHashtags.get(topic).toArray()){
+                                    Connection socket=broker.connect(sub.config.getIp(), sub.config.getConsumerPort());
+                                    broker.disconnect(socket);
+                                }
                             }
-                            broker.userHashtags.get(topic).add(subscriber);
-                            b
                         } catch (ClassCastException cc) {
                             System.out.println("Error: ");
                         }
