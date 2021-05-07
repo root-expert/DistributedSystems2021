@@ -216,8 +216,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     private static class Handler implements Runnable {
-        private Socket socket;
-        private Broker broker;
+        private final Socket socket;
+        private final Broker broker;
 
         public Handler(Socket socket, Broker broker) {
             this.socket = socket;
@@ -227,66 +227,65 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         @Override
         public void run() {
             try {
-                // Initaialising output and input streams
+                // Initializing output and input streams
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-                // Reading the action required
-                String action = in.readUTF();
-                if (action.equals("connectP")) {
-                    // Receive the object that wants to be connected
-                    Publisher pu = (Publisher) in.readObject();
+                while (!socket.isClosed()) {
+                    // Reading the action required
+                    String action = in.readUTF();
+                    if (action.equals("connectP")) {
+                        // Receive the object that wants to be connected
+                        Publisher pu = (Publisher) in.readObject();
 
-                    // Add Publishers to the registered publishers
-                    if(!broker.registeredPublishers.contains(pu))broker.registeredPublishers.add(pu);
-                } else if (action.equals("disconnectP")) {
-                    // Receive the channel to remove from the registered publishers
-                    String cn = in.readUTF();
-                    Publisher toBeRemoved = null;
+                        // Add Publishers to the registered publishers
+                        if (!broker.registeredPublishers.contains(pu)) broker.registeredPublishers.add(pu);
+                    } else if (action.equals("disconnectP")) {
+                        // Receive the channel to remove from the registered publishers
+                        String cn = in.readUTF();
+                        Publisher toBeRemoved = null;
 
-                    // Search for the correct publisher
-                    for (Publisher pu : broker.registeredPublishers) {
-                        if (pu.getChannelName().channelName.equals(cn)) {
-                            toBeRemoved = pu;
+                        // Search for the correct publisher
+                        for (Publisher pu : broker.registeredPublishers) {
+                            if (pu.getChannelName().channelName.equals(cn)) {
+                                toBeRemoved = pu;
+                            }
                         }
+
+                        // If a channel to be removed has been found removes it
+                        if (toBeRemoved != null) {
+                            broker.registeredPublishers.remove(toBeRemoved);
+
+                        } else {
+                            throw new Exception("There doesn't exist a publisher with that channel name");
+                        }
+                    } else if (action.equals("getBrokerInfo")) {
+                        out.writeObject(broker.brokerAssociatedHashtags);
+                        out.flush();
+                    } else if (action.equals("AddHashTag")) {
+                        // Receive the topic to add into the broker (if it doesn't already exist)
+                        String topic = in.readUTF();
+                        // if it does not already exist in this broker's collection add it
+                        broker.brokerAssociatedHashtags.get(broker).add(topic);
+                        broker.notifyBrokersOnChanges();
+
+                    } else if (action.equals("RemoveHashTag")) {
+                        // Receive the topic to remove from the broker (if it exists)
+                        String topic = in.readUTF();
+                        // if it exists in this broker's collection remove it
+                        broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                        broker.notifyBrokersOnChanges();
                     }
-
-                    // If a channel to be removed has been found removes it
-                    if (toBeRemoved != null) {
-                        broker.registeredPublishers.remove(toBeRemoved);
-
-                    } else {
-                        throw new Exception("There doesn't exist a publisher with that channel name");
-                    }
-                } else if (action.equals("getBrokerInfo")) {
-                    out.writeObject(broker.brokerAssociatedHashtags);
-                    out.flush();
-                } else if (action.equals("AddHashTag")) {
-                    // Receive the topic to add into the broker (if it doesn't already exist)
-                    String topic = in.readUTF();
-                    // if it does not already exist in this broker's collection add it
-                    broker.brokerAssociatedHashtags.get(broker).add(topic);
-                    broker.notifyBrokersOnChanges();
-
-                } else if (action.equals("RemoveHashTag")) {
-                    // Receive the topic to remove from the broker (if it exists)
-                    String topic = in.readUTF();
-                    // if it exists in this broker's collection remove it
-                    broker.brokerAssociatedHashtags.get(broker).remove(topic);
-                    broker.notifyBrokersOnChanges();
                 }
                 // Close streams if defined
-                if (out != null)
-                    out.close();
-                if (in != null)
-                    in.close();
+                out.close();
+                in.close();
                 if (socket != null)
                     socket.close();
             } catch (ClassNotFoundException cf) {
                 System.out.println("Error: invalid cast" + cf.getMessage());
             } catch (NullPointerException nu) {
-                System.out.println("Error:Innappropriate connection object, connection failed" + nu.getMessage());
-
+                System.out.println("Error: Inappropriate connection object, connection failed" + nu.getMessage());
             } catch (IOException io) {
                 System.out.println("Error: problem in input/output" + io.getMessage());
             } catch (Exception e) {
