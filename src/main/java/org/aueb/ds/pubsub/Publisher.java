@@ -11,10 +11,7 @@ import org.aueb.ds.util.MetadataExtract;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Random;
+import java.util.*;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -302,6 +299,19 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             System.out.println(e.getMessage());
         }
         super.disconnect(connection);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Publisher publisher = (Publisher) o;
+        return channelName.channelName.equals(publisher.channelName.channelName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(channelName.channelName);
     }
 
     @Override
