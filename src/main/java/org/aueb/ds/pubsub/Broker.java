@@ -261,6 +261,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
+                } else if (action.equals("getBrokerInfo")) {
+                    out.writeObject(broker.brokerAssociatedHashtags);
+                    out.flush();
                 } else if (action.equals("AddHashTag")) {
                     // Receive the topic to add into the broker (if it doesn't already exist)
                     String topic = in.readUTF();

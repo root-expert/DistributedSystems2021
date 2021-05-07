@@ -8,8 +8,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class Consumer extends AppNode implements Runnable {
+
+    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
 
     public Consumer(AppNodeConfig conf) {
         super(conf);
@@ -27,11 +31,14 @@ public class Consumer extends AppNode implements Runnable {
             connection.in = new ObjectInputStream(connection.socket.getInputStream());
             connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
 
-            connection.out.writeUTF("getBrokerList");
+            connection.out.writeUTF("getBrokerInfo");
             connection.out.flush();
 
-            this.setBrokers((ArrayList<Broker>) connection.in.readObject());
-            System.out.println("Received broker list");
+            hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
+            System.out.println("Received broker's list.");
+
+            ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
+            this.setBrokers(brokerList);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
