@@ -175,8 +175,25 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     @Override
+    /**
+     * Update Consumer's Broker list after
+     * a hashtag has been added or removed.
+     */
     public void updateNodes() {
+        for (Consumer consumer : registeredUsers) {
+            Connection connection = connect(consumer.config.getIp(), consumer.config.getPublisherPort());
+            try {
+                connection.out.writeUTF("updateBrokerList");
+                connection.out.writeObject(this);
+                connection.out.writeObject(brokerAssociatedHashtags.get(this));
+                connection.out.flush();
 
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                disconnect(connection);
+            }
+        }
     }
 
     @Override
@@ -268,6 +285,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // if it does not already exist in this broker's collection add it
                         broker.brokerAssociatedHashtags.get(broker).add(topic);
                         broker.notifyBrokersOnChanges();
+                        // Update consumer's broker list
+                        broker.updateNodes();
 
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
@@ -275,6 +294,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // if it exists in this broker's collection remove it
                         broker.brokerAssociatedHashtags.get(broker).remove(topic);
                         broker.notifyBrokersOnChanges();
+                        // Update consumer's broker list
+                        broker.updateNodes();
                     }
                 }
                 // Close streams if defined
