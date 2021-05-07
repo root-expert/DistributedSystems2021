@@ -1,4 +1,6 @@
 package org.aueb.ds.model.config;
 
-public class Config {
+import java.io.Serializable;
+
+public class Config implements Serializable {
 }
