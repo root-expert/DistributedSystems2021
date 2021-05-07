@@ -157,7 +157,30 @@ public class Consumer extends AppNode implements Runnable {
 
         @Override
         public void run() {
+            try {
+                // Initializing output and input streams
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
+                while (!socket.isClosed()) {
+                    // Reading the action required
+                    String action = in.readUTF();
+                    if (action.equals("updateBrokerList")) {
+                        Broker broker = (Broker) in.readObject();
+                        HashSet<String> hashtags = (HashSet<String>) in.readObject();
+                        consumer.hashtagInfo.put(broker, hashtags);
+                    }
+                }
+                // Close streams if defined
+                out.close();
+                in.close();
+                if (socket != null)
+                    socket.close();
+            } catch (IOException io) {
+                System.out.println("Error: problem in input/output" + io.getMessage());
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         }
     }
 }
