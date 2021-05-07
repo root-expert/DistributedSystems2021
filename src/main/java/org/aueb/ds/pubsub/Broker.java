@@ -64,7 +64,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     connection.out.flush();
                     int exitCode = connection.in.readInt();
                     if (exitCode == 0) {
-                        // TODO: Change pull paqrameters
                         pull(pu, topic);
                     }
                     disconnect(connection);
@@ -76,9 +75,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     /**
-     * Notifies the rest of the brokers for changes
-     * on the hashtags this specific broker is
-     * responsible for.
+     * Notifies the rest of the brokers for changes on the hashtags this specific
+     * broker is responsible for.
      */
     public void notifyBrokersOnChanges() {
         for (Broker broker : brokerAssociatedHashtags.keySet()) {
@@ -183,8 +181,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)return true;
+        if (o == null || getClass() != o.getClass())return false;
         Broker broker = (Broker) o;
         return hash.equals(broker.hash);
     }
@@ -238,26 +236,25 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 if (action.equals("connectP")) {
                     // Receive the object that wants to be connected
                     Publisher pu = (Publisher) in.readObject();
-                    // Check if the channel name already exists in the registered publishers
-                    for (Publisher p : broker.registeredPublishers) {
-                        if (p.getChannelName().channelName.equals(pu.getChannelName().channelName))
-                            throw new Exception("There exist a publisher with the same name");
-                    }
-                    // Add Publishers to the registered publishers and update on the publishers
-                    broker.registeredPublishers.add(pu);
+
+                    // Add Publishers to the registered publishers
+                    if(!broker.registeredPublishers.contains(pu))broker.registeredPublishers.add(pu);
                 } else if (action.equals("disconnectP")) {
                     // Receive the channel to remove from the registered publishers
                     String cn = in.readUTF();
                     Publisher toBeRemoved = null;
+
                     // Search for the correct publisher
                     for (Publisher pu : broker.registeredPublishers) {
                         if (pu.getChannelName().channelName.equals(cn)) {
                             toBeRemoved = pu;
                         }
                     }
+
                     // If a channel to be removed has been found removes it
                     if (toBeRemoved != null) {
                         broker.registeredPublishers.remove(toBeRemoved);
+
                     } else {
                         throw new Exception("There doesn't exist a publisher with that channel name");
                     }
