@@ -13,7 +13,7 @@ import java.util.HashSet;
 
 public class Consumer extends AppNode implements Runnable {
 
-    private HashMap<Broker, HashSet<String>> HashtagInfo = new HashMap<>();
+    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
 
     public Consumer(AppNodeConfig conf) {
         super(conf);
@@ -34,13 +34,10 @@ public class Consumer extends AppNode implements Runnable {
             connection.out.writeUTF("getBrokerInfo");
             connection.out.flush();
 
-            HashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
+            hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
             System.out.println("Received broker's list.");
 
-            ArrayList<Broker> brokerList = new ArrayList<>();
-            for (Broker key : HashtagInfo.keySet()) {
-                brokerList.add(key);
-            }
+            ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
             this.setBrokers(brokerList);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
