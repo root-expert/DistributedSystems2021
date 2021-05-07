@@ -43,29 +43,29 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Add hashtag to ChannelName's List ("#viral") Inform Brokers
+     * Add hashtag or channelName to ChannelName's List ("#viral").
+     * Inform Brokers.
      *
-     * @param hashtag HashTag added.
+     * @param topic HashTag or channelName added.
      */
-    public synchronized void addHashTag(String hashtag) {
-        channelName.hashtagsPublished.add(hashtag);
-        notifyBrokersForHashTags(hashtag, true);
+    public synchronized void addHashTag(String topic) {
+        channelName.hashtagsPublished.add(topic);
+        notifyBrokersForHashTags(topic, true);
         System.out.println("Hashtag added.");
     }
 
     /**
-     * Remove hashtag from ChannelName's List ("#viral") Inform Brokers
+     * Remove hashtag from ChannelName's List ("#viral").
+     * Inform Brokers if hashtag is not used in any other Publisher's video.
      *
      * @param hashtag HashTag removed.
      */
     public synchronized void removeHashTag(String hashtag) {
+        if (channelName.userVideoFilesMap.get(hashtag).size() == 1) {
+            notifyBrokersForHashTags(hashtag, false);
+        }
         channelName.hashtagsPublished.remove(hashtag);
-        notifyBrokersForHashTags(hashtag, false);
         System.out.println("Hashtag removed.");
-    }
-
-    public void getBrokerList() {
-
     }
 
     /**
