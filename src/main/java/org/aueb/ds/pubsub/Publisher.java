@@ -28,12 +28,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void init() {
         //Intitialise the channel name object 
         channelName = new ChannelName(config.getChannelName());
-
-        // Connect to all brokers
-        for(Broker broker: getBrokers()){
-            connect(broker.config.getIp(), broker.config.getPort());
-        }
-
         try {
             //Find all the videos on the Publisher's folder
             File cwd=new File(System.getProperty("user.dir"));
@@ -166,7 +160,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
         Broker broker = hashTopic(hashtag);
-        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection =connect(broker.config.getIp(), broker.config.getPort());
 
         try {
             if (add) {

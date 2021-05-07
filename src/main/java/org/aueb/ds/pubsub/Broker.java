@@ -239,12 +239,13 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     // Receive the object that wants to be connected
                     Publisher pu = (Publisher) in.readObject();
                     // Check if the channel name already exists in the registered publishers
+                    boolean exists=false;
                     for (Publisher p : broker.registeredPublishers) {
                         if (p.getChannelName().channelName.equals(pu.getChannelName().channelName))
-                            throw new Exception("There exist a publisher with the same name");
+                            exists=true;
                     }
                     // Add Publishers to the registered publishers and update on the publishers
-                    broker.registeredPublishers.add(pu);
+                    if(!exists)broker.registeredPublishers.add(pu);
                 } else if (action.equals("disconnectP")) {
                     // Receive the channel to remove from the registered publishers
                     String cn = in.readUTF();
