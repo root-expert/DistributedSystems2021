@@ -306,20 +306,52 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         }
                     }else if(action.equals("subscribe")){
                         try {
+                            //Read the consumer object and the topic
                             Consumer subscriber=(Consumer)in.readObject();
                             String topic=in.readUTF();
+                            // If the broker is associated with this topic 
+                            // and therefore provide videos for it
                             if (broker.brokerAssociatedHashtags.get(broker).contains(topic)){
                                 // TODO: discuss and implement what happens when a consumer
                                 // TODO: subscribes to a broker they are not registered to
+
+
+                                // If there are no consumers subscribed to this topic
+                                // initialise the repository of consumers that will be 
+                                // informed with the video 
                                 if(!broker.userHashtags.containsKey(topic)){
                                     broker.userHashtags.put(topic,new HashSet<>());
                                 }
+                                // Add the Consumer to the repository and reconstruct the list
+                                // of the videos to be sent to them
                                 broker.userHashtags.get(topic).add(subscriber);
                                 broker.videoList.clear();
                                 broker.notifyPublisher(topic);
-                                int numberOfVideos=broker.videoList.get(topic).size();
-                                for (Consumer sub:(Consumer[])broker.userHashtags.get(topic).toArray()){
+
+                                // For each consumer that is affiliated with the topic
+                                for (Consumer sub:broker.userHashtags.get(topic)){
+                                    // Create a connection with the corresponding consumer
                                     Connection socket=broker.connect(sub.config.getIp(), sub.config.getConsumerPort());
+                                    // Create a Set with the videos to be sent the consumer, where
+                                    // the consumer's own videos are excluded
+                                    HashSet<ArrayList<Value>> toSend=new HashSet<>();
+                                    for (ArrayList<Value> video: broker.videoList.get(topic)){
+                                        if (!video.get(0).videoFile.channelName.equals(sub.channel))
+                                            toSend.add(video);
+                                    }
+                                    //Send the ammount of videos to be sent
+                                    int numVideos=toSend.size();
+                                    socket.out.writeUTF("videoSend");
+                                    socket.out.writeInt(numVideos);
+                                    for(ArrayList<Value> video:toSend){
+                                        //Send the ammount chunks each viddeo has
+                                        socket.out.writeInt(video.size());
+                                        for(Value chunk:video){
+                                            socket.out.writeObject(chunk);
+                                        }
+                                    }
+                                    //Ensure that the videos are sent and disconnect
+                                    socket.out.flush();
                                     broker.disconnect(socket);
                                 }
                             }
