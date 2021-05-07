@@ -312,10 +312,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             // If the broker is associated with this topic 
                             // and therefore provide videos for it
                             if (broker.brokerAssociatedHashtags.get(broker).contains(topic)){
-                                // TODO: discuss and implement what happens when a consumer
-                                // TODO: subscribes to a broker they are not registered to
-
-
+                                out.writeInt(0);
                                 // If there are no consumers subscribed to this topic
                                 // initialise the repository of consumers that will be 
                                 // informed with the video 
@@ -354,6 +351,20 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     socket.out.flush();
                                     broker.disconnect(socket);
                                 }
+                            }else{
+                                boolean found=false;
+                                for(Broker brock:broker.brokerAssociatedHashtags.keySet()){ 
+                                    if (broker.brokerAssociatedHashtags.get(brock).contains(topic)){
+                                        found=true;
+                                        out.writeInt(1);
+                                        out.writeObject(brock);
+                                        break;
+                                    }
+                                }
+                                if (!found){
+                                    out.writeInt(-1);
+                                }
+                                out.flush();
                             }
                         } catch (ClassCastException cc) {
                             System.out.println("Error: ");
