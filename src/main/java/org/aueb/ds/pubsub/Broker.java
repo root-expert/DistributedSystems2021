@@ -18,7 +18,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
-    private HashMap<String, ArrayList<Value>> videoList = new HashMap<>();
+    private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
+    private HashMap<String,HashSet<Consumer>> userHashtags=new HashMap<>();
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
@@ -121,7 +122,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         chunkList.add((Value) connection.in.readObject());
                     }
                     Collections.sort(chunkList);
-                    videoList.put(topic, chunkList);
+                    videoList.get(topic).add(chunkList);
                 }
             } else {
                 return;
@@ -284,6 +285,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         String topic = in.readUTF();
                         // if it does not already exist in this broker's collection add it
                         broker.brokerAssociatedHashtags.get(broker).add(topic);
+                        broker.videoList.put(topic, new ArrayList<>());
                         broker.notifyBrokersOnChanges();
                         // Update consumer's broker list
                         broker.updateNodes();
@@ -291,11 +293,29 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
-                        // if it exists in this broker's collection remove it
-                        broker.brokerAssociatedHashtags.get(broker).remove(topic);
-                        broker.notifyBrokersOnChanges();
-                        // Update consumer's broker list
-                        broker.updateNodes();
+                        int count=0;
+                        for (Publisher pu:broker.registeredPublishers){
+                            if (pu.getChannelName().hashtagsPublished.contains(topic)) count++;
+                        }
+                        if(count==1){
+                            broker.videoList.remove(topic);
+                            broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                            broker.notifyBrokersOnChanges();
+                            // Update consumer's broker list
+                            broker.updateNodes();
+                        }
+                    }else if(action.equals("subscribe")){
+                        try {
+                            Consumer subscriber=(Consumer)in.readObject();
+                            String topic=in.readUTF();
+                            if(!broker.userHashtags.containsKey(topic)){
+                                broker.userHashtags.put(topic,new HashSet<>());
+                            }
+                            broker.userHashtags.get(topic).add(subscriber);
+                            b
+                        } catch (ClassCastException cc) {
+                            System.out.println("Error: ");
+                        }
                     }
                 }
                 // Close streams if defined

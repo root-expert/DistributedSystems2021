@@ -26,6 +26,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void init() {
         //Intitialise the channel name object 
         channelName = new ChannelName(config.getChannelName());
+        channel=channelName.channelName;
         //Find all the videos on the Publisher's folder
         File cwd=new File(System.getProperty("user.dir"));
         for (File file:cwd.listFiles()){
