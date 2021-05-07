@@ -28,24 +28,20 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void init() {
         //Intitialise the channel name object 
         channelName = new ChannelName(config.getChannelName());
-        try {
-            //Find all the videos on the Publisher's folder
-            File cwd=new File(System.getProperty("user.dir"));
-            for (File file:cwd.listFiles()){
-                if(file.getName().contains(".mp4")){
-                    ArrayList<Value> video = generateChunks(file.getName());
-                    channelName.userVideoFilesMap.put(file.getName().replace(".mp4", "").split("#")[0], video);
-                    for (String h : video.get(0).videoFile.associatedHashtags) {
-                        if (!channelName.hashtagsPublished.contains(h)) {
-                            addHashTag(h);
-                        }
+        //Find all the videos on the Publisher's folder
+        File cwd=new File(System.getProperty("user.dir"));
+        for (File file:cwd.listFiles()){
+            if(file.getName().contains(".mp4")){
+                ArrayList<Value> video = generateChunks(file.getName());
+                channelName.userVideoFilesMap.put(file.getName().replace(".mp4", "").split("#")[0], video);
+                for (String h : video.get(0).videoFile.associatedHashtags) {
+                    if (!channelName.hashtagsPublished.contains(h)) {
+                        addHashTag(h);
                     }
                 }
             }
-            addHashTag(channelName.channelName);
-        } catch (NullPointerException n) {
-            System.out.println("Error: problem with a null pointer: "+n.getMessage());
-        }      
+        }
+        addHashTag(channelName.channelName);
     }
 
     /**
