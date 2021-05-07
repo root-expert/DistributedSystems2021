@@ -31,17 +31,17 @@ public class Consumer extends AppNode implements Runnable {
             connection.in = new ObjectInputStream(connection.socket.getInputStream());
             connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
 
-            connection.out.writeUTF("getBrokerList");
-            connection.out.flush();
-
-            this.setBrokers((ArrayList<Broker>) connection.in.readObject());
-            System.out.println("Received broker list");
-
-            connection.out.writeUTF("getHashtagInfo");
+            connection.out.writeUTF("getBrokerInfo");
             connection.out.flush();
 
             HashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
+            System.out.println("Received broker's list.");
 
+            ArrayList<Broker> brokerList = new ArrayList<>();
+            for (Broker key : HashtagInfo.keySet()) {
+                brokerList.add(key);
+            }
+            this.setBrokers(brokerList);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
