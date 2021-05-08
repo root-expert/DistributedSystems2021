@@ -25,6 +25,9 @@ public class Consumer extends AppNode implements Runnable {
     @Override
     public void init() {
 
+        // Make directory to save files
+        new File(System.getProperty("user.dir") + "/out/").mkdirs();
+
         channelName = config.getChannelName();
         Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
 
@@ -115,13 +118,17 @@ public class Consumer extends AppNode implements Runnable {
         }
     }
 
+    /**
+     * Saves video file locally.
+     *
+     * @param video The Value object with video chunks.
+     */
     public void playData(ArrayList<Value> video) {
         Collections.sort(video);
 
-        File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName);
-        FileOutputStream fos = new FileOutputStream(file);
-
         try {
+            File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName);
+            FileOutputStream fos = new FileOutputStream(file);
             for (Value v : video) {
                 fos.write(v.videoFile.videoFileChunk);
                 fos.flush();
