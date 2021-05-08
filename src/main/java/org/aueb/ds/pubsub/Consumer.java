@@ -22,8 +22,8 @@ public class Consumer extends AppNode implements Runnable {
     }
 
     /**
-     * Initializes Consumer's state. Connects to the first Broker
-     * retrieving the rest of the Brokers.
+     * Initializes Consumer's state. Connects to the first Broker retrieving the
+     * rest of the Brokers.
      */
     @Override
     public void init() {
@@ -55,16 +55,39 @@ public class Consumer extends AppNode implements Runnable {
      * @param topic  The topic to be subscribed on.
      */
     public void subscribe(Broker broker, String topic) {
-        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
         try {
             connection.out.writeUTF("subscribe");
             connection.out.writeObject(this);
             connection.out.writeUTF(topic);
             connection.out.flush();
-
+            int exitCode = connection.in.readInt();
+            if (exitCode == 1) {
+                System.out.println("The topic does not exist. Redirecting to correct brocker.");
+                disconnect(connection);
+                subscribe((Broker) connection.in.readObject(), topic);
+            } else if (exitCode == -1) {
+                System.out.println("The topic does not exist. Subscription failed.");
+            } else {
+                System.out.println("Subscription successfull. Receiving videos for new topic.");
+                // Receive the number of videos to be viewed
+                int numVideos = connection.in.readInt();
+                for (int video = 0; video < numVideos; video++) {
+                    // Construct the video
+                    ArrayList<Value> fullVideo = new ArrayList<>();
+                    int numChunks = connection.in.readInt();
+                    for (int bin = 0; bin < numChunks; bin++) {
+                        fullVideo.add((Value) connection.in.readObject());
+                    }
+                    // And store it locally
+                    playData(fullVideo);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException cf) {
+            System.out.println("Error: invalid cast :" + cf.getMessage());
         } finally {
             super.disconnect(connection);
         }
@@ -92,7 +115,7 @@ public class Consumer extends AppNode implements Runnable {
         }
     }
 
-    public void playData(String topic, Value value) {
+    public void playData(ArrayList<Value> video) {
 
     }
 
