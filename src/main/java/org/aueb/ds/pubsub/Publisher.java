@@ -63,13 +63,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public synchronized void removeHashTag(String hashtag) {
         int hashtagCount = 0;
         for (ArrayList<Value> list : channelName.userVideoFilesMap.values()) {
-            for (Value value : list) {
-                if (value.videoFile.associatedHashtags.contains(hashtag)) {
-                    hashtagCount++;
-                }
+            if (list.get(0).videoFile.associatedHashtags.contains(hashtag)) {
+                hashtagCount++;
             }
         }
-        if (hashtagCount > 1) {
+        if (hashtagCount == 1) {
             notifyBrokersForHashTags(hashtag, false);
             channelName.hashtagsPublished.remove(hashtag);
             System.out.println("Hashtag removed.");
