@@ -136,7 +136,6 @@ public class Consumer extends AppNode implements Runnable {
                     bytes += v.videoFile.videoFileChunk.length;
                     fos.flush();
                 }
-                bytes = 0;
             }
             fos.close();
         } catch (FileNotFoundException f) {
