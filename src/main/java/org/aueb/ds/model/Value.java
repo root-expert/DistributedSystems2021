@@ -21,8 +21,8 @@ public class Value implements Serializable, Comparable<Value> {
      * @param video    byte[] bytes of video
      */
     public Value(String name, String channel, String date, String duration, String rate, String height, String width,
-            HashSet<String> hashtag, int size, byte[] video) {
-        videoFile = new VideoFile(name, channel, date, duration, rate, height, width, hashtag, size, video);
+            HashSet<String> hashtag, byte[] video) {
+        videoFile = new VideoFile(name, channel, date, duration, rate, height, width, hashtag, video);
     }
 
     /**

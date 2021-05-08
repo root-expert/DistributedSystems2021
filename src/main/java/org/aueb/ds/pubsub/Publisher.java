@@ -232,7 +232,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(name + "_" + currentbin, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, chunk);
                 video.add(videoChunk);
                 videoChunk = new Value();
             }
@@ -243,14 +243,14 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             int remaining = len - (bins * chunkSize);
             if (remaining > 0) {
                 // the chunks have to be of equal size
-                chunk = new byte[chunkSize];
+                chunk = new byte[remaining];
                 for (int cByte = 0; cByte < remaining; cByte++) {
                     chunk[cByte] = fullVideo[bins * chunkSize + cByte];
                 }
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(name + "_" + bins, this.channelName.channelName,
                         metadata.getAttr("dateCreated"), metadata.getAttr("length"), metadata.getAttr("frameRate"),
-                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, len, chunk);
+                        metadata.getAttr("frameHeight"), metadata.getAttr("frameWidth"), hashtags, chunk);
                 video.add(videoChunk);
             }
             raf.close();
