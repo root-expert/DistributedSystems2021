@@ -14,7 +14,6 @@ public class AppNode implements Node {
 
     private static ArrayList<Broker> brokers = new ArrayList<>();
     protected static AppNodeConfig config;
-    protected static String channel = "";
 
     public AppNode(AppNodeConfig conf) {
         config = conf;

@@ -12,9 +12,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 
 public class Consumer extends AppNode implements Runnable {
 
+    protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
 
     public Consumer(AppNodeConfig conf) {
@@ -27,6 +29,7 @@ public class Consumer extends AppNode implements Runnable {
      */
     @Override
     public void init() {
+        channelName = config.getChannelName();
         Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
 
         try {
@@ -152,6 +155,19 @@ public class Consumer extends AppNode implements Runnable {
     @Override
     public void disconnect(Connection connection) {
         super.disconnect(connection);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Consumer consumer = (Consumer) o;
+        return this.channelName.equals(consumer.channelName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(hashtagInfo);
     }
 
     @Override

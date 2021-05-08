@@ -352,7 +352,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                 // the consumer's own videos are excluded
                                 HashSet<ArrayList<Value>> toSend = new HashSet<>();
                                 for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                    if (!video.get(0).videoFile.channelName.equals(subscriber.channel))
+                                    if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
                                         toSend.add(video);
                                 }
                                 // Send the ammount of videos to be sent
