@@ -9,7 +9,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.UUID;
 
 public class AppNode implements Node {
 
@@ -36,25 +35,26 @@ public class AppNode implements Node {
     }
 
     @Override
-    public Connection connect(String ip, int port) {
-        Socket socket = null;
-        ObjectInputStream in = null;
-        ObjectOutputStream out = null;
+    public Connection connect(String ip, int port) throws IOException {
+        Socket socket;
+        ObjectInputStream in;
+        ObjectOutputStream out;
 
-        try {
-            socket = new Socket(ip, port);
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        socket = new Socket(ip, port);
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
 
         return new Connection(socket, in, out);
     }
 
     @Override
     public void disconnect(Connection connection) {
+        if (connection == null) return;
+
         try {
+            connection.out.writeUTF("end");
+            connection.out.flush();
+
             connection.in.close();
             connection.out.close();
             connection.socket.close();

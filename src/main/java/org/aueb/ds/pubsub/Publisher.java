@@ -17,6 +17,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     private ChannelName channelName;
     private final Object lock = new Object();
+    private static final String TAG = "[Publisher] ";
 
     public Publisher(AppNodeConfig conf) {
         super(conf);
@@ -136,9 +137,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param broker The Broker to notify.
      */
     public void notifyFailure(Broker broker) {
-        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = null;
 
         try {
+            connection = super.connect(broker.config.getIp(), broker.config.getPort());
             connection.out.writeUTF("PushFailed");
             connection.out.writeUTF(channelName.channelName);
 
@@ -270,15 +272,17 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     @Override
     public Connection connect(String ip, int port) {
-        Connection connection = super.connect(ip, port);
+        Connection connection = null;
         try {
+            connection = super.connect(ip, port);
             // Send a message to the corresponding Broker and the Publisher object to be
             // added in its hashmap
             connection.out.writeUTF("connectP");
             connection.out.writeObject(this);
             connection.out.flush();
         } catch (IOException io) {
-            System.out.println("Error in input/output when sending connection messages");
+            System.out.println(TAG + "Error in input/output when sending connection messages");
+            io.printStackTrace();
         }
         return connection;
     }
@@ -295,9 +299,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             connection.out.writeUTF(channelName.channelName);
             connection.out.flush();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println(TAG + "Error while sending disconnection message " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            super.disconnect(connection);
         }
-        super.disconnect(connection);
     }
 
     @Override

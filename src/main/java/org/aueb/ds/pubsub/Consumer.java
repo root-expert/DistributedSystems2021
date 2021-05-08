@@ -100,9 +100,10 @@ public class Consumer extends AppNode implements Runnable {
      * @param topic  The topic to unsubscribe from.
      */
     public void unsubscribe(Broker broker, String topic) {
-        Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = null;
 
         try {
+            connection = super.connect(broker.config.getIp(), broker.config.getPort());
             connection.out.writeUTF("unsubscribe");
             connection.out.writeObject(this);
             connection.out.writeUTF(topic);
@@ -129,9 +130,10 @@ public class Consumer extends AppNode implements Runnable {
     @Override
     public Connection connect(String ip, int port) {
         // Open Socket connection with the Broker
-        Connection connection = super.connect(ip, port);
+        Connection connection = null;
 
         try {
+            connection = super.connect(ip, port);
             connection.out.writeUTF("register");
             connection.out.writeObject(this);
             connection.out.flush();

@@ -37,18 +37,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         brokerAssociatedHashtags.put(this, new HashSet<>());
     }
 
-    public void calculateKeys() {
-
-    }
-
-    public Publisher acceptConnection(Publisher publisher) {
-        return null;
-    }
-
-    public Consumer acceptConnection(Consumer consumer) {
-        return null;
-    }
-
     public void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
         Connection connection = null;
@@ -96,8 +84,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (connection != null)
-                    disconnect(connection);
+                disconnect(connection);
             }
         }
     }
@@ -135,13 +122,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            if (connection != null)
-                disconnect(connection);
+            disconnect(connection);
         }
-    }
-
-    public void filterConsumers(String consumer) {
-
     }
 
     @Override
@@ -164,6 +146,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     public void disconnect(Connection connection) {
+        if (connection == null) return;
+
         try {
             if (connection.in != null)
                 connection.in.close();
@@ -193,8 +177,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (connection != null)
-                    disconnect(connection);
+                disconnect(connection);
             }
         }
     }
@@ -410,6 +393,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Broker toBeRemoved = (Broker) in.readObject();
                         broker.brokerAssociatedHashtags.remove(toBeRemoved);
                         System.out.println(TAG + "Broker removed! Port = " + toBeRemoved.config.getPort());
+                    } else if (action.equals("end")) {
+                        break;
                     }
                 }
                 // Close streams if defined
