@@ -115,7 +115,7 @@ public class Consumer extends AppNode implements Runnable {
         }
     }
 
-    public void playData(ArrayList<Value> video) throws FileNotFoundException {
+    public void playData(ArrayList<Value> video) {
         Collections.sort(video);
 
         File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName);
@@ -127,6 +127,8 @@ public class Consumer extends AppNode implements Runnable {
                 fos.flush();
             }
             fos.close();
+        } catch (FileNotFoundException f) {
+            System.out.println("Error: could not find file: " + f.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
         }
