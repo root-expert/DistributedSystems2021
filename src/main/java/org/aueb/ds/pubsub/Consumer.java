@@ -72,6 +72,8 @@ public class Consumer extends AppNode implements Runnable {
                 subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
                 System.out.println("The topic does not exist. Subscription failed.");
+            } else if (exitCode == -2) {
+                System.out.println("Subscription successfull. There are no videos currently to receive.");
             } else {
                 System.out.println("Subscription successfull. Receiving videos for new topic.");
                 // Receive the number of videos to be viewed
@@ -159,8 +161,10 @@ public class Consumer extends AppNode implements Runnable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Consumer consumer = (Consumer) o;
         return this.channelName.equals(consumer.channelName);
     }

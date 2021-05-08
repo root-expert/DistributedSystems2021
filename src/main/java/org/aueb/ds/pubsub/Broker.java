@@ -146,7 +146,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     public void disconnect(Connection connection) {
-        if (connection == null) return;
+        if (connection == null)
+            return;
 
         try {
             if (connection.in != null)
@@ -219,7 +220,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
                         connected = true;
                     } catch (IOException e) {
-                        System.out.println(TAG + "Broker with address " + address + " seems down. Trying again in 5 seconds");
+                        System.out.println(
+                                TAG + "Broker with address " + address + " seems down. Trying again in 5 seconds");
                         try {
                             Thread.sleep(5000);
                         } catch (InterruptedException interruptedException) {
@@ -335,7 +337,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             // If the broker is associated with this topic
                             // and therefore provide videos for it
                             if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
-                                out.writeInt(0);
                                 // If there are no consumers subscribed to this topic
                                 // initialise the repository of consumers that will be
                                 // informed with the video
@@ -348,22 +349,27 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                 broker.videoList.get(topic).clear();
                                 broker.notifyPublisher(topic);
 
-                                // Create a Set with the videos to be sent the consumer, where
-                                // the consumer's own videos are excluded
-                                HashSet<ArrayList<Value>> toSend = new HashSet<>();
-                                for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                    if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
-                                        toSend.add(video);
-                                }
-                                // Send the ammount of videos to be sent
-                                int numVideos = toSend.size();
-                                out.writeInt(numVideos);
-                                for (ArrayList<Value> video : toSend) {
-                                    // Send the ammount chunks each viddeo has
-                                    out.writeInt(video.size());
-                                    for (Value chunk : video) {
-                                        out.writeObject(chunk);
+                                if (!broker.videoList.get(topic).isEmpty()) {
+                                    out.writeInt(0);
+                                    // Create a Set with the videos to be sent the consumer, where
+                                    // the consumer's own videos are excluded
+                                    HashSet<ArrayList<Value>> toSend = new HashSet<>();
+                                    for (ArrayList<Value> video : broker.videoList.get(topic)) {
+                                        if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
+                                            toSend.add(video);
                                     }
+                                    // Send the ammount of videos to be sent
+                                    int numVideos = toSend.size();
+                                    out.writeInt(numVideos);
+                                    for (ArrayList<Value> video : toSend) {
+                                        // Send the ammount chunks each viddeo has
+                                        out.writeInt(video.size());
+                                        for (Value chunk : video) {
+                                            out.writeObject(chunk);
+                                        }
+                                    }
+                                } else {
+                                    out.write(-2);
                                 }
                                 // Ensure that the videos are sent and disconnect
                                 out.flush();
