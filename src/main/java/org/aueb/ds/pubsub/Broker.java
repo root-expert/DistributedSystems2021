@@ -19,7 +19,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     private ArrayList<Consumer> registeredUsers = new ArrayList<>();
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
-    private HashMap<String,HashSet<Consumer>> userHashtags=new HashMap<>();
+    private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
 
     protected BrokerConfig config;
@@ -177,8 +177,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     /**
-     * Update Consumer's Broker list after
-     * a hashtag has been added or removed.
+     * Update Consumer's Broker list after a hashtag has been added or removed.
      */
     public void updateNodes() {
         for (Consumer consumer : registeredUsers) {
@@ -199,8 +198,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)return true;
-        if (o == null || getClass() != o.getClass())return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Broker broker = (Broker) o;
         return hash.equals(broker.hash);
     }
@@ -257,7 +258,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Publisher pu = (Publisher) in.readObject();
 
                         // Add Publishers to the registered publishers
-                        if (!broker.registeredPublishers.contains(pu)) broker.registeredPublishers.add(pu);
+                        if (!broker.registeredPublishers.contains(pu))
+                            broker.registeredPublishers.add(pu);
                     } else if (action.equals("disconnectP")) {
                         // Receive the channel to remove from the registered publishers
                         String cn = in.readUTF();
@@ -293,31 +295,32 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
-                        int count=0;
-                        for (Publisher pu:broker.registeredPublishers){
-                            if (pu.getChannelName().hashtagsPublished.contains(topic)) count++;
+                        int count = 0;
+                        for (Publisher pu : broker.registeredPublishers) {
+                            if (pu.getChannelName().hashtagsPublished.contains(topic))
+                                count++;
                         }
-                        if(count==1){
+                        if (count == 1) {
                             broker.videoList.remove(topic);
                             broker.brokerAssociatedHashtags.get(broker).remove(topic);
                             broker.notifyBrokersOnChanges();
                             // Update consumer's broker list
                             broker.updateNodes();
                         }
-                    }else if(action.equals("subscribe")){
+                    } else if (action.equals("subscribe")) {
                         try {
-                            //Read the consumer object and the topic
-                            Consumer subscriber=(Consumer)in.readObject();
-                            String topic=in.readUTF();
-                            // If the broker is associated with this topic 
+                            // Read the consumer object and the topic
+                            Consumer subscriber = (Consumer) in.readObject();
+                            String topic = in.readUTF();
+                            // If the broker is associated with this topic
                             // and therefore provide videos for it
-                            if (broker.brokerAssociatedHashtags.get(broker).contains(topic)){
+                            if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
                                 out.writeInt(0);
                                 // If there are no consumers subscribed to this topic
-                                // initialise the repository of consumers that will be 
-                                // informed with the video 
-                                if(!broker.userHashtags.containsKey(topic)){
-                                    broker.userHashtags.put(topic,new HashSet<>());
+                                // initialise the repository of consumers that will be
+                                // informed with the video
+                                if (!broker.userHashtags.containsKey(topic)) {
+                                    broker.userHashtags.put(topic, new HashSet<>());
                                 }
                                 // Add the Consumer to the repository and reconstruct the list
                                 // of the videos to be sent to them
@@ -327,34 +330,34 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
                                 // Create a Set with the videos to be sent the consumer, where
                                 // the consumer's own videos are excluded
-                                HashSet<ArrayList<Value>> toSend=new HashSet<>();
-                                for (ArrayList<Value> video: broker.videoList.get(topic)){
+                                HashSet<ArrayList<Value>> toSend = new HashSet<>();
+                                for (ArrayList<Value> video : broker.videoList.get(topic)) {
                                     if (!video.get(0).videoFile.channelName.equals(subscriber.channel))
                                         toSend.add(video);
                                 }
-                                //Send the ammount of videos to be sent
-                                int numVideos=toSend.size();
+                                // Send the ammount of videos to be sent
+                                int numVideos = toSend.size();
                                 out.writeInt(numVideos);
-                                for(ArrayList<Value> video:toSend){
-                                    //Send the ammount chunks each viddeo has
+                                for (ArrayList<Value> video : toSend) {
+                                    // Send the ammount chunks each viddeo has
                                     out.writeInt(video.size());
-                                    for(Value chunk:video){
+                                    for (Value chunk : video) {
                                         out.writeObject(chunk);
                                     }
                                 }
-                                //Ensure that the videos are sent and disconnect
+                                // Ensure that the videos are sent and disconnect
                                 out.flush();
-                            }else{
-                                boolean found=false;
-                                for(Broker brock:broker.brokerAssociatedHashtags.keySet()){ 
-                                    if (broker.brokerAssociatedHashtags.get(brock).contains(topic)){
-                                        found=true;
+                            } else {
+                                boolean found = false;
+                                for (Broker brock : broker.brokerAssociatedHashtags.keySet()) {
+                                    if (broker.brokerAssociatedHashtags.get(brock).contains(topic)) {
+                                        found = true;
                                         out.writeInt(1);
                                         out.writeObject(brock);
                                         break;
                                     }
                                 }
-                                if (!found){
+                                if (!found) {
                                     out.writeInt(-1);
                                 }
                                 out.flush();
