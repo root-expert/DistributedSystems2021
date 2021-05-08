@@ -21,6 +21,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
     private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
+    private static final String TAG = "[Broker] ";
 
     protected BrokerConfig config;
     protected String hash;
@@ -51,7 +52,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     public void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
         Connection connection = null;
-        /**
+        /*
          * For every publisher that is affiliated with the broker, either if the channel
          * name matches the topic or is a hashtag that the Publisher has content of
          */
@@ -84,9 +85,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             if (broker.hash.equals(this.hash))
                 continue;
 
-            Connection connection = connect(broker.config.getIp(), broker.config.getPort());
+            Connection connection = null;
 
             try {
+                connection = connect(broker.config.getIp(), broker.config.getPort());
                 connection.out.writeUTF("notifyNewHashtags");
                 connection.out.writeUTF(hash);
                 connection.out.writeObject(brokerAssociatedHashtags.get(this));
@@ -94,7 +96,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                disconnect(connection);
+                if (connection != null)
+                    disconnect(connection);
             }
         }
     }
@@ -107,8 +110,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     public void pull(Publisher publisher, String topic) {
         ArrayList<Value> chunkList = new ArrayList<>();
 
-        Connection connection = connect(publisher.config.getIp(), publisher.config.getPublisherPort());
+        Connection connection = null;
         try {
+            connection = connect(publisher.config.getIp(), publisher.config.getPublisherPort());
             connection.out.writeUTF("push");
             connection.out.writeUTF(topic);
             connection.out.flush();
@@ -131,7 +135,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            disconnect(connection);
+            if (connection != null)
+                disconnect(connection);
         }
     }
 
@@ -145,18 +150,14 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     @Override
-    public Connection connect(String ip, int port) {
-        Socket socket = null;
-        ObjectInputStream in = null;
-        ObjectOutputStream out = null;
+    public Connection connect(String ip, int port) throws IOException {
+        Socket socket;
+        ObjectInputStream in;
+        ObjectOutputStream out;
 
-        try {
-            socket = new Socket(ip, port);
-            in = new ObjectInputStream(socket.getInputStream());
-            out = new ObjectOutputStream(socket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        socket = new Socket(ip, port);
+        in = new ObjectInputStream(socket.getInputStream());
+        out = new ObjectOutputStream(socket.getOutputStream());
 
         return new Connection(socket, in, out);
     }
@@ -176,13 +177,14 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     @Override
-    /**
+    /*
      * Update Consumer's Broker list after a hashtag has been added or removed.
      */
     public void updateNodes() {
         for (Consumer consumer : registeredUsers) {
-            Connection connection = connect(consumer.config.getIp(), consumer.config.getPublisherPort());
+            Connection connection = null;
             try {
+                connection = connect(consumer.config.getIp(), consumer.config.getPublisherPort());
                 connection.out.writeUTF("updateBrokerList");
                 connection.out.writeObject(this);
                 connection.out.writeObject(brokerAssociatedHashtags.get(this));
@@ -191,7 +193,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                disconnect(connection);
+                if (connection != null)
+                    disconnect(connection);
             }
         }
     }
@@ -215,6 +218,40 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     public void run() {
         // Run initialization before accepting requests
         init();
+
+        Runnable brokerConnection = () -> {
+            for (String address : this.config.getBrokers()) {
+                boolean connected = false;
+
+                while (!connected) {
+                    String ip = address.split(":")[0];
+                    int port = Integer.parseInt(address.split(":")[1]);
+
+                    Connection connection = null;
+                    try {
+                        connection = connect(ip, port);
+                        connection.out.writeUTF("addBroker");
+                        connection.out.writeObject(this);
+                        connection.out.flush();
+
+                        connected = true;
+                    } catch (IOException e) {
+                        System.out.println(TAG + "Broker with address " + address + " seems down. Trying again in 5 seconds");
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException interruptedException) {
+                            interruptedException.printStackTrace();
+                        }
+                    } finally {
+                        if (connection != null) {
+                            disconnect(connection);
+                        }
+                    }
+                }
+            }
+        };
+
+        new Thread(brokerConnection).start();
 
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPort());
@@ -277,7 +314,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             broker.registeredPublishers.remove(toBeRemoved);
 
                         } else {
-                            throw new Exception("There doesn't exist a publisher with that channel name");
+                            throw new IllegalStateException("There doesn't exist a publisher with that channel name");
                         }
                     } else if (action.equals("getBrokerInfo")) {
                         out.writeObject(broker.brokerAssociatedHashtags);
@@ -365,20 +402,28 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         } catch (ClassCastException cc) {
                             System.out.println("Error: ");
                         }
+                    } else if (action.equals("addBroker")) {
+                        Broker newBroker = (Broker) in.readObject();
+                        broker.brokerAssociatedHashtags.put(newBroker, new HashSet<>());
+                        System.out.println(TAG + "New broker added! Port = " + newBroker.config.getPort());
+                    } else if (action.equals("removeBroker")) {
+                        Broker toBeRemoved = (Broker) in.readObject();
+                        broker.brokerAssociatedHashtags.remove(toBeRemoved);
+                        System.out.println(TAG + "Broker removed! Port = " + toBeRemoved.config.getPort());
                     }
                 }
                 // Close streams if defined
                 out.close();
                 in.close();
-                if (socket != null)
-                    socket.close();
+                socket.close();
             } catch (ClassNotFoundException cf) {
                 System.out.println("Error: invalid cast" + cf.getMessage());
             } catch (NullPointerException nu) {
                 System.out.println("Error: Inappropriate connection object, connection failed" + nu.getMessage());
             } catch (IOException io) {
-                System.out.println("Error: problem in input/output" + io.getMessage());
-            } catch (Exception e) {
+                System.out.println("Error: problem in input/output " + io.getMessage());
+                io.printStackTrace();
+            } catch (IllegalStateException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         }
