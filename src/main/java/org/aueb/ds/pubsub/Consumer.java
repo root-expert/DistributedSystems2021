@@ -18,6 +18,7 @@ public class Consumer extends AppNode implements Runnable {
 
     protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
+    private static final String TAG = "[Consumer] ";
 
     public Consumer(AppNodeConfig conf) {
         super(conf);
@@ -30,24 +31,33 @@ public class Consumer extends AppNode implements Runnable {
     @Override
     public void init() {
         channelName = config.getChannelName();
-        Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
+        Connection connection = null;
+        boolean connected = false;
 
-        try {
-            connection.in = new ObjectInputStream(connection.socket.getInputStream());
-            connection.out = new ObjectOutputStream(connection.socket.getOutputStream());
+        while (!connected) {
+            try {
+                connection = super.connect(config.getBrokerIP(), config.getBrokerPort());
+                connection.out.writeUTF("getBrokerInfo");
+                connection.out.flush();
 
-            connection.out.writeUTF("getBrokerInfo");
-            connection.out.flush();
+                connected = true;
+                System.out.println(TAG + "Acquired first connection to broker.");
 
-            hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
-            System.out.println("Received broker's list.");
+                hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
+                System.out.println(TAG + "Received broker's list.");
 
-            ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
-            this.setBrokers(brokerList);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            disconnect(connection);
+                ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
+                this.setBrokers(brokerList);
+            } catch (IOException | ClassNotFoundException e) {
+                System.out.println(TAG + "Broker seems down. Trying again in 5 seconds");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
+                }
+            } finally {
+                super.disconnect(connection);
+            }
         }
     }
 
@@ -58,9 +68,10 @@ public class Consumer extends AppNode implements Runnable {
      * @param topic  The topic to be subscribed on.
      */
     public void subscribe(Broker broker, String topic) {
-        Connection connection = connect(broker.config.getIp(), broker.config.getPort());
+        Connection connection = null;
 
         try {
+            connection = connect(broker.config.getIp(), broker.config.getPort());
             connection.out.writeUTF("subscribe");
             connection.out.writeObject(this);
             connection.out.writeUTF(topic);
@@ -133,18 +144,14 @@ public class Consumer extends AppNode implements Runnable {
      * @return A Connection object.
      */
     @Override
-    public Connection connect(String ip, int port) {
+    public Connection connect(String ip, int port) throws IOException {
         // Open Socket connection with the Broker
         Connection connection = null;
 
-        try {
-            connection = super.connect(ip, port);
-            connection.out.writeUTF("register");
-            connection.out.writeObject(this);
-            connection.out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        connection = super.connect(ip, port);
+        connection.out.writeUTF("register");
+        connection.out.writeObject(this);
+        connection.out.flush();
 
         return connection;
     }
@@ -214,6 +221,8 @@ public class Consumer extends AppNode implements Runnable {
                         Broker broker = (Broker) in.readObject();
                         HashSet<String> hashtags = (HashSet<String>) in.readObject();
                         consumer.hashtagInfo.put(broker, hashtags);
+                    } else if (action.equals("end")) {
+                        break;
                     }
                 }
                 // Close streams if defined
