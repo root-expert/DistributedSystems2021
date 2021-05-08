@@ -127,11 +127,16 @@ public class Consumer extends AppNode implements Runnable {
         Collections.sort(video);
 
         try {
-            File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName);
+            File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
             FileOutputStream fos = new FileOutputStream(file);
+            int bytes = 0;
             for (Value v : video) {
-                fos.write(v.videoFile.videoFileChunk);
-                fos.flush();
+                while (bytes < v.videoFile.numOfBytes) {
+                    fos.write(v.videoFile.videoFileChunk);
+                    bytes += v.videoFile.videoFileChunk.length;
+                    fos.flush();
+                }
+                bytes = 0;
             }
             fos.close();
         } catch (FileNotFoundException f) {
