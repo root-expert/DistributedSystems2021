@@ -25,14 +25,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      */
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
     
-    /**
-     * userHashtags: a hashmap that holds the set of Consumer objects that are associated with this topic.
-     */
+    // userHashtags: a hashmap that holds the set of Consumer objects that are associated with this topic.
     private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
    
-    /**
-     * brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker is associated with.
-     */
+    //brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker is associated with.
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
 
