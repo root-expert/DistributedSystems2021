@@ -112,7 +112,14 @@ public class Consumer extends AppNode implements Runnable {
             connection.out.writeObject(this);
             connection.out.writeUTF(topic);
             connection.out.flush();
-
+            int exitCode=connection.in.readInt();
+            if (exitCode == 0){
+                System.out.println("Successful unsubscription from topic.");
+            }else if(exitCode == -1){
+                System.out.println("The topic to be unsubscribed from does not exist.");
+            }else{
+                System.out.println("Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
