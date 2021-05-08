@@ -16,22 +16,20 @@ import java.util.*;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
-    private ArrayList<Consumer> registeredUsers = new ArrayList<>();
-    private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
+    private HashSet<Consumer> registeredUsers = new HashSet<>();
+    private HashSet<Publisher> registeredPublishers = new HashSet<>();
 
-    /**
+    /*
      * videoList: is a list with all videos(already chunked from the publisher)
      * concerning a certain topic. It only contains the topics the broker is
      * associated with.
      */
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
 
-    // userHashtags: a hashmap that holds the set of Consumer objects that are
-    // associated with this topic.
+    // userHashtags: a hashmap that holds the set of Consumer objects that are associated with this topic.
     private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
 
-    // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker
-    // is associated with.
+    // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker is associated with.
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
 
@@ -422,6 +420,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             out.writeInt(-1);
                         }
                         out.flush();
+                    } else if (action.equals("register")) {
+                        Consumer consumer = (Consumer) in.readObject();
+                        broker.registeredUsers.add(consumer);
+                    } else if (action.equals("unregister")) {
+                        Consumer consumer = (Consumer) in.readObject();
+                        broker.registeredUsers.remove(consumer);
                     } else if (action.equals("addBroker")) {
                         Broker newBroker = (Broker) in.readObject();
                         broker.brokerAssociatedHashtags.put(newBroker, new HashSet<>());

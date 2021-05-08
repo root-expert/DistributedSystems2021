@@ -123,12 +123,12 @@ public class Consumer extends AppNode implements Runnable {
             connection.out.writeObject(this);
             connection.out.writeUTF(topic);
             connection.out.flush();
-            int exitCode=connection.in.readInt();
-            if (exitCode == 0){
+            int exitCode = connection.in.readInt();
+            if (exitCode == 0) {
                 System.out.println("Successful unsubscription from topic.");
-            }else if(exitCode == -1){
+            } else if (exitCode == -1) {
                 System.out.println("The topic to be unsubscribed from does not exist.");
-            }else{
+            } else {
                 System.out.println("Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
             }
         } catch (IOException e) {
@@ -188,6 +188,15 @@ public class Consumer extends AppNode implements Runnable {
      */
     @Override
     public void disconnect(Connection connection) {
+        try {
+            connection.out.writeUTF("unregister");
+            connection.out.writeObject(this);
+            connection.out.flush();
+        } catch (IOException e) {
+            System.out.println(TAG + "Error while unregistering");
+            e.printStackTrace();
+        }
+
         super.disconnect(connection);
     }
 
@@ -253,8 +262,7 @@ public class Consumer extends AppNode implements Runnable {
                 // Close streams if defined
                 out.close();
                 in.close();
-                if (socket != null)
-                    socket.close();
+                socket.close();
             } catch (IOException io) {
                 System.out.println("Error: problem in input/output" + io.getMessage());
             } catch (Exception e) {
