@@ -4,15 +4,10 @@ import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.AppNodeConfig;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.*;
 
 public class Consumer extends AppNode implements Runnable {
 
@@ -29,6 +24,10 @@ public class Consumer extends AppNode implements Runnable {
      */
     @Override
     public void init() {
+
+        // Make directory to save files
+        new File(System.getProperty("user.dir") + "/out/").mkdirs();
+
         channelName = config.getChannelName();
         Connection connection = connect(config.getBrokerIP(), config.getBrokerPort());
 
@@ -121,8 +120,27 @@ public class Consumer extends AppNode implements Runnable {
         }
     }
 
+    /**
+     * Saves video file locally.
+     *
+     * @param video The Value object with video chunks.
+     */
     public void playData(ArrayList<Value> video) {
+        Collections.sort(video);
 
+        try {
+            File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
+            FileOutputStream fos = new FileOutputStream(file);
+            for (Value v : video) {
+                fos.write(v.videoFile.videoFileChunk);
+            }
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException f) {
+            System.out.println("Error: could not find file: " + f.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
