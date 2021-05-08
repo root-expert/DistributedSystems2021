@@ -71,8 +71,19 @@ public class Consumer extends AppNode implements Runnable {
                 System.out.println("The topic does not exist. Subscription failed.");
             }else{
                 System.out.println("Subscription successfull. Receiving videos for new topic.");
+                // Receive the number of videos to be viewed  
+                int numVideos=connection.in.readInt();
+                for (int video=0;video<numVideos;video++){
+                    // Construct the video
+                    ArrayList<Value> fullVideo=new ArrayList<>();
+                    int numChunks=connection.in.readInt();
+                    for (int bin=0;bin<numChunks;bin++){
+                        fullVideo.add((Value)connection.in.readObject());
+                    }
+                    // And store it locally
+                    playData(fullVideo);
+                }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }catch (ClassNotFoundException cf) { 
@@ -181,20 +192,6 @@ public class Consumer extends AppNode implements Runnable {
                         Broker broker = (Broker) in.readObject();
                         HashSet<String> hashtags = (HashSet<String>) in.readObject();
                         consumer.hashtagInfo.put(broker, hashtags);
-                    }else if(action.equals("videoSend")){
-                        // Receive the number of videos to be viewed  
-                        int numVideos=in.readInt();
-                        for (int video=0;video<numVideos;video++){
-                            // Construct the video
-                            ArrayList<Value> fullVideo=new ArrayList<>();
-                            int numChunks=in.readInt();
-                            for (int bin=0;bin<numChunks;bin++){
-                                fullVideo.add((Value)in.readObject());
-                            }
-                            // And store it locally
-                            consumer.playData(fullVideo);
-                        }
-
                     }
                 }
                 // Close streams if defined
