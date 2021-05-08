@@ -20,15 +20,18 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     private ArrayList<Publisher> registeredPublishers = new ArrayList<>();
 
     /**
-     * videoList: is a list with all videos(already chunked from the publisher) concerning a certain topic.
-     * It only contains the topics the broker is associated with.
+     * videoList: is a list with all videos(already chunked from the publisher)
+     * concerning a certain topic. It only contains the topics the broker is
+     * associated with.
      */
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
-    
-    // userHashtags: a hashmap that holds the set of Consumer objects that are associated with this topic.
+
+    // userHashtags: a hashmap that holds the set of Consumer objects that are
+    // associated with this topic.
     private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
-   
-    //brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker is associated with.
+
+    // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker
+    // is associated with.
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
 
@@ -400,22 +403,22 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         } catch (ClassCastException cc) {
                             System.out.println("Error: ");
                         }
-                    }else if (action.equals("unsubscribe")){
+                    } else if (action.equals("unsubscribe")) {
                         // Receive the Consumer object and the topic for unsubscription
-                        Consumer subscriber=(Consumer) in.readObject();
-                        String topic=in.readUTF();
+                        Consumer subscriber = (Consumer) in.readObject();
+                        String topic = in.readUTF();
 
-                        // Check if the broker has the topic and is actively handling it 
-                        if (broker.brokerAssociatedHashtags.get(broker).contains(topic)){
-                            // The subscriber is removed from the subscription hashset 
+                        // Check if the broker has the topic and is actively handling it
+                        if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
+                            // The subscriber is removed from the subscription hashset
                             boolean completed = broker.userHashtags.get(topic).remove(subscriber);
                             // If the removal was successful inform with an exit code
-                            if(completed){
+                            if (completed) {
                                 out.writeInt(0);
-                            }else{
+                            } else {
                                 out.writeInt(-2);
                             }
-                        }else{
+                        } else {
                             out.writeInt(-1);
                         }
                         out.flush();
