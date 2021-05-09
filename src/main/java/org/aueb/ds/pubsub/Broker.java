@@ -314,14 +314,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // Receive the channel to remove from the registered publishers
                         String cn = in.readUTF();
 
-                        Publisher toBeRemoved = broker.registeredPublishers
+                        broker.registeredPublishers
                                 .stream().filter(it -> it.getChannelName().channelName.equals(cn))
-                                .findFirst().orElse(null);
-
-                        if (toBeRemoved != null)
-                            broker.registeredPublishers.remove(toBeRemoved);
-                        else
-                            throw new IllegalStateException("There doesn't exist a publisher with that channel name");
+                                .findFirst().ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
                     } else if (action.equals("getBrokerInfo")) {
                         out.writeObject(broker.brokerAssociatedHashtags);
                         out.flush();
@@ -481,8 +476,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (IOException io) {
                 System.out.println(TAG + "Error: problem in input/output " + io.getMessage());
                 io.printStackTrace();
-            } catch (IllegalStateException e) {
-                System.out.println(TAG + "Error: " + e.getMessage());
             }
         }
     }
