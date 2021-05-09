@@ -38,3 +38,4 @@ bin/
 
 .classpath
 .project
+build/libs/
