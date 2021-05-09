@@ -162,6 +162,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             return;
 
         try {
+            connection.out.writeUTF("end");
+            connection.out.flush();
+
             if (connection.in != null)
                 connection.in.close();
             if (connection.out != null)
@@ -240,9 +243,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             interruptedException.printStackTrace();
                         }
                     } finally {
-                        if (connection != null) {
-                            disconnect(connection);
-                        }
+                        disconnect(connection);
                     }
                 }
             }
