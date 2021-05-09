@@ -327,6 +327,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void run() {
+        init();
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
             while (true) {
