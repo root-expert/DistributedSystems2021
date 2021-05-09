@@ -51,8 +51,14 @@ public class App {
                 Thread pubThread = new Thread(publisher);
                 Thread consThread = new Thread(consumer);
 
-                pubThread.start();
                 consThread.start();
+
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                pubThread.start();
 
                 try {
                     pubThread.join();
