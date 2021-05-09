@@ -58,9 +58,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         brokerAssociatedHashtags.put(this, new HashSet<>());
     }
 
-    public void notifyPublisher(String topic) {
+    public synchronized void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
-        Connection connection = null;
+        Connection connection;
         /*
          * For every publisher that is affiliated with the broker, either if the channel
          * name matches the topic or is a hashtag that the Publisher has content of
@@ -88,7 +88,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * Notifies the rest of the brokers for changes on the hashtags this specific
      * broker is responsible for.
      */
-    public void notifyBrokersOnChanges() {
+    public synchronized void notifyBrokersOnChanges() {
         for (Broker broker : brokerAssociatedHashtags.keySet()) {
             if (broker.hash.equals(this.hash))
                 continue;
@@ -132,13 +132,15 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         chunkList.add((Value) connection.in.readObject());
                     }
 
-                    ArrayList<ArrayList<Value>> videos = videoList.get(topic);
+                    synchronized (this) {
+                        ArrayList<ArrayList<Value>> videos = videoList.get(topic);
 
-                    if (videos == null)
-                        videos = new ArrayList<>();
+                        if (videos == null)
+                            videos = new ArrayList<>();
 
-                    videos.add(chunkList);
-                    videoList.put(topic, videos);
+                        videos.add(chunkList);
+                        videoList.put(topic, videos);
+                    }
                 }
             }
 
@@ -191,7 +193,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     /*
      * Update Consumer's Broker list after a hashtag has been added or removed.
      */
-    public void updateNodes() {
+    public synchronized void updateNodes() {
         for (Consumer consumer : registeredUsers) {
             Connection connection = null;
             try {
@@ -222,6 +224,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     @Override
     public int hashCode() {
         return Objects.hash(hash);
+    }
+
+    @Override
+    public int compareTo(Broker broker) {
+        return this.hash.compareTo(broker.hash);
     }
 
     @Override
@@ -275,11 +282,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         }
     }
 
-    @Override
-    public int compareTo(Broker broker) {
-        return this.hash.compareTo(broker.hash);
-    }
-
     private static class Handler implements Runnable {
         private final Socket socket;
         private final Broker broker;
@@ -303,52 +305,70 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // Receive the object that wants to be connected
                         Publisher pu = (Publisher) in.readObject();
 
-                        // Add Publishers to the registered publishers
-                        if (!broker.registeredPublishers.contains(pu)) {
-                            broker.registeredPublishers.add(pu);
-                            broker.publisherHashtags.put(pu, new HashSet<>());
+                        synchronized (broker) {
+                            // Add Publishers to the registered publishers
+                            if (!broker.registeredPublishers.contains(pu)) {
+                                broker.registeredPublishers.add(pu);
+                                broker.publisherHashtags.put(pu, new HashSet<>());
+                            }
                         }
                     } else if (action.equals("disconnectP")) {
                         // Receive the channel to remove from the registered publishers
                         String cn = in.readUTF();
 
-                        broker.registeredPublishers
-                                .stream().filter(it -> it.getChannelName().channelName.equals(cn))
-                                .findFirst().ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
+                        synchronized (broker) {
+                            broker.registeredPublishers
+                                    .stream().filter(it -> it.getChannelName().channelName.equals(cn))
+                                    .findFirst()
+                                    .ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
+                        }
                     } else if (action.equals("getBrokerInfo")) {
-                        out.writeObject(broker.brokerAssociatedHashtags);
+                        synchronized (broker) {
+                            out.writeObject(broker.brokerAssociatedHashtags);
+                        }
                         out.flush();
                     } else if (action.equals("AddHashTag")) {
                         // Receive the topic to add into the broker (if it doesn't already exist)
                         String topic = in.readUTF();
                         String channelName = in.readUTF();
-                        // if it does not already exist in this broker's collection add it
-                        broker.brokerAssociatedHashtags.get(broker).add(topic);
 
-                        // Update the hashtags of the specified publisher
-                        broker.publisherHashtags.keySet().stream()
-                                .filter(it -> it.getChannelName().channelName.equals(channelName))
-                                .findFirst()
-                                .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
+                        synchronized (broker) {
+                            // Add topic to Broker's hashtags
+                            broker.brokerAssociatedHashtags.get(broker).add(topic);
 
-                        broker.videoList.put(topic, new ArrayList<>());
+                            // Update the hashtags of the specified publisher
+                            broker.publisherHashtags.keySet().stream()
+                                    .filter(it -> it.getChannelName().channelName.equals(channelName))
+                                    .findFirst()
+                                    .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
+
+                            broker.videoList.put(topic, new ArrayList<>());
+                        }
                         broker.notifyBrokersOnChanges();
                         // Update consumer's broker list
                         broker.updateNodes();
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
-                        int count = 0;
-                        for (Publisher pu : broker.registeredPublishers) {
-                            if (pu.getChannelName().hashtagsPublished.contains(topic))
-                                count++;
-                        }
-                        if (count == 1) {
-                            broker.videoList.remove(topic);
-                            broker.brokerAssociatedHashtags.get(broker).remove(topic);
-                            broker.notifyBrokersOnChanges();
-                            // Update consumer's broker list
-                            broker.updateNodes();
+                        String channelName = in.readUTF();
+
+                        synchronized (broker) {
+                            long count = broker.publisherHashtags.values().stream()
+                                    .filter(it -> it.contains(topic))
+                                    .count();
+
+                            broker.publisherHashtags.keySet().stream()
+                                    .filter(it -> it.getChannelName().channelName.equals(channelName))
+                                    .findFirst()
+                                    .ifPresent(publisher -> broker.publisherHashtags.get(publisher).remove(topic));
+
+                            if (count == 1) {
+                                broker.videoList.remove(topic);
+                                broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                                broker.notifyBrokersOnChanges();
+                                // Update consumer's broker list
+                                broker.updateNodes();
+                            }
                         }
                     } else if (action.equals("subscribe")) {
                         // Read the consumer object and the topic
@@ -357,55 +377,63 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // If the broker is associated with this topic
                         // and therefore provide videos for it
                         if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
-                            // If there are no consumers subscribed to this topic
-                            // initialise the repository of consumers that will be
-                            // informed with the video
-                            if (!broker.userHashtags.containsKey(topic)) {
-                                broker.userHashtags.put(topic, new HashSet<>());
+                            /* If there are no consumers subscribed to this topic
+                             * initialize the repository of consumers that will be
+                             * informed with the video
+                             */
+                            synchronized (broker) {
+                                if (!broker.userHashtags.containsKey(topic)) {
+                                    broker.userHashtags.put(topic, new HashSet<>());
+                                }
+                                // Add the Consumer to the repository and reconstruct the list
+                                // of the videos to be sent to them
+                                broker.userHashtags.get(topic).add(subscriber);
+                                ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
+
+                                if (videos != null)
+                                    broker.videoList.get(topic).clear();
                             }
-                            // Add the Consumer to the repository and reconstruct the list
-                            // of the videos to be sent to them
-                            broker.userHashtags.get(topic).add(subscriber);
-                            ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
-                            if (videos != null)
-                                broker.videoList.get(topic).clear();
                             broker.notifyPublisher(topic);
 
-                            if (!broker.videoList.get(topic).isEmpty()) {
-                                out.writeInt(0);
-                                out.flush();
-                                // Create a Set with the videos to be sent the consumer, where
-                                // the consumer's own videos are excluded
-                                HashSet<ArrayList<Value>> toSend = new HashSet<>();
-                                for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                    if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
-                                        toSend.add(video);
-                                }
-                                // Send the amount of videos to be sent
-                                int numVideos = toSend.size();
-                                out.writeInt(numVideos);
-                                out.flush();
-                                for (ArrayList<Value> video : toSend) {
-                                    // Send the amount chunks each video has
-                                    out.writeInt(video.size());
+                            synchronized (broker) {
+                                if (!broker.videoList.get(topic).isEmpty()) {
+                                    out.writeInt(0);
                                     out.flush();
-                                    for (Value chunk : video) {
-                                        out.writeObject(chunk);
-                                        out.flush();
+                                    // Create a Set with the videos to be sent the consumer, where
+                                    // the consumer's own videos are excluded
+                                    HashSet<ArrayList<Value>> toSend = new HashSet<>();
+                                    for (ArrayList<Value> video : broker.videoList.get(topic)) {
+                                        if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
+                                            toSend.add(video);
                                     }
+                                    // Send the amount of videos to be sent
+                                    int numVideos = toSend.size();
+                                    out.writeInt(numVideos);
+                                    out.flush();
+                                    for (ArrayList<Value> video : toSend) {
+                                        // Send the amount chunks each video has
+                                        out.writeInt(video.size());
+                                        out.flush();
+                                        for (Value chunk : video) {
+                                            out.writeObject(chunk);
+                                            out.flush();
+                                        }
+                                    }
+                                } else {
+                                    out.write(-2);
+                                    out.flush();
                                 }
-                            } else {
-                                out.write(-2);
-                                out.flush();
                             }
                         } else {
                             boolean found = false;
-                            for (Broker brock : broker.brokerAssociatedHashtags.keySet()) {
-                                if (broker.brokerAssociatedHashtags.get(brock).contains(topic)) {
-                                    found = true;
-                                    out.writeInt(1);
-                                    out.writeObject(brock);
-                                    break;
+                            synchronized (broker) {
+                                for (Broker brock : broker.brokerAssociatedHashtags.keySet()) {
+                                    if (broker.brokerAssociatedHashtags.get(brock).contains(topic)) {
+                                        found = true;
+                                        out.writeInt(1);
+                                        out.writeObject(brock);
+                                        break;
+                                    }
                                 }
                             }
                             if (!found) {
@@ -418,42 +446,58 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Consumer subscriber = (Consumer) in.readObject();
                         String topic = in.readUTF();
 
-                        // Check if the broker has the topic and is actively handling it
-                        if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
-                            // The subscriber is removed from the subscription hashset
-                            boolean completed = broker.userHashtags.get(topic).remove(subscriber);
-                            // If the removal was successful inform with an exit code
-                            if (completed) {
-                                out.writeInt(0);
+                        synchronized (broker) {
+                            // Check if the broker has the topic and is actively handling it
+                            if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
+                                // The subscriber is removed from the subscription hashset
+                                boolean completed = broker.userHashtags.get(topic).remove(subscriber);
+                                // If the removal was successful inform with an exit code
+                                if (completed) {
+                                    out.writeInt(0);
+                                } else {
+                                    out.writeInt(-2);
+                                }
                             } else {
-                                out.writeInt(-2);
+                                out.writeInt(-1);
                             }
-                        } else {
-                            out.writeInt(-1);
                         }
                         out.flush();
                     } else if (action.equals("register")) {
                         Consumer consumer = (Consumer) in.readObject();
-                        broker.registeredUsers.add(consumer);
+
+                        synchronized (broker) {
+                            broker.registeredUsers.add(consumer);
+                        }
                     } else if (action.equals("unregister")) {
                         Consumer consumer = (Consumer) in.readObject();
-                        broker.registeredUsers.remove(consumer);
+
+                        synchronized (broker) {
+                            broker.registeredUsers.remove(consumer);
+                        }
                     } else if (action.equals("addBroker")) {
                         Broker newBroker = (Broker) in.readObject();
-                        broker.brokerAssociatedHashtags.put(newBroker, new HashSet<>());
-                        System.out.println(TAG + "New broker added! Port = " + newBroker.config.getPort());
+
+                        synchronized (broker) {
+                            broker.brokerAssociatedHashtags.put(newBroker, new HashSet<>());
+                        }
+                        System.out.println(TAG + "New broker added. Port = " + newBroker.config.getPort());
                     } else if (action.equals("removeBroker")) {
                         Broker toBeRemoved = (Broker) in.readObject();
-                        broker.brokerAssociatedHashtags.remove(toBeRemoved);
-                        System.out.println(TAG + "Broker removed! Port = " + toBeRemoved.config.getPort());
+
+                        synchronized (broker) {
+                            broker.brokerAssociatedHashtags.remove(toBeRemoved);
+                        }
+                        System.out.println(TAG + "Broker removed. Port = " + toBeRemoved.config.getPort());
                     } else if (action.equals("notifyNewHashtags")) {
                         String hash = in.readUTF();
                         HashSet<String> hashtags = (HashSet<String>) in.readObject();
 
-                        for (Broker toBeUpdated : broker.brokerAssociatedHashtags.keySet()) {
-                            if (toBeUpdated.hash.equals(hash)) {
-                                broker.brokerAssociatedHashtags.put(toBeUpdated, hashtags);
-                                break;
+                        synchronized (broker) {
+                            for (Broker toBeUpdated : broker.brokerAssociatedHashtags.keySet()) {
+                                if (toBeUpdated.hash.equals(hash)) {
+                                    broker.brokerAssociatedHashtags.put(toBeUpdated, hashtags);
+                                    break;
+                                }
                             }
                         }
                         broker.updateNodes();
