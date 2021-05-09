@@ -12,7 +12,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
@@ -20,6 +23,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     private HashSet<Consumer> registeredUsers = new HashSet<>();
     private HashSet<Publisher> registeredPublishers = new HashSet<>();
+
+    // Contains which hashtags each Publisher is responsible for
+    private HashMap<Publisher, HashSet<String>> publisherHashtags = new HashMap<>();
 
     /*
      * videoList: is a list with all videos(already chunked from the publisher)
@@ -60,8 +66,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
          * name matches the topic or is a hashtag that the Publisher has content of
          */
         for (Publisher pu : registeredPublishers) {
-            if (pu.getChannelName().hashtagsPublished.contains(topic)
-                    || pu.getChannelName().channelName.equals(topic)) {
+            if (publisherHashtags.get(pu).contains(topic) || pu.getChannelName().channelName.equals(topic)) {
                 try {
                     connection = this.connect(pu.config.getIp(), pu.config.getPublisherPort());
                     connection.out.writeUTF("notify");
@@ -73,7 +78,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     }
                     disconnect(connection);
                 } catch (IOException io) {
-                    System.out.println("Error: there was problem in input/output: " + io.getMessage());
+                    System.out.println(TAG + "Error: there was problem in input/output: " + io.getMessage());
                 }
             }
         }
@@ -127,11 +132,16 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     for (int j = 1; j <= numOfChunks; j++) {
                         chunkList.add((Value) connection.in.readObject());
                     }
-                    Collections.sort(chunkList);
-                    videoList.get(topic).add(chunkList);
+
+                    ArrayList<ArrayList<Value>> videos = videoList.get(topic);
+
+                    if (videos != null)
+                        videos.add(chunkList);
+                    else {
+                        videoList.put(topic, new ArrayList<>());
+                        videoList.get(topic).add(chunkList);
+                    }
                 }
-            } else {
-                return;
             }
 
         } catch (IOException | ClassNotFoundException e) {
@@ -296,40 +306,42 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Publisher pu = (Publisher) in.readObject();
 
                         // Add Publishers to the registered publishers
-                        if (!broker.registeredPublishers.contains(pu))
+                        if (!broker.registeredPublishers.contains(pu)) {
                             broker.registeredPublishers.add(pu);
+                            broker.publisherHashtags.put(pu, new HashSet<>());
+                        }
                     } else if (action.equals("disconnectP")) {
                         // Receive the channel to remove from the registered publishers
                         String cn = in.readUTF();
-                        Publisher toBeRemoved = null;
 
-                        // Search for the correct publisher
-                        for (Publisher pu : broker.registeredPublishers) {
-                            if (pu.getChannelName().channelName.equals(cn)) {
-                                toBeRemoved = pu;
-                            }
-                        }
+                        Publisher toBeRemoved = broker.registeredPublishers
+                                .stream().filter(it -> it.getChannelName().channelName.equals(cn))
+                                .findFirst().orElse(null);
 
-                        // If a channel to be removed has been found removes it
-                        if (toBeRemoved != null) {
+                        if (toBeRemoved != null)
                             broker.registeredPublishers.remove(toBeRemoved);
-
-                        } else {
+                        else
                             throw new IllegalStateException("There doesn't exist a publisher with that channel name");
-                        }
                     } else if (action.equals("getBrokerInfo")) {
                         out.writeObject(broker.brokerAssociatedHashtags);
                         out.flush();
                     } else if (action.equals("AddHashTag")) {
                         // Receive the topic to add into the broker (if it doesn't already exist)
                         String topic = in.readUTF();
+                        String channelName = in.readUTF();
                         // if it does not already exist in this broker's collection add it
                         broker.brokerAssociatedHashtags.get(broker).add(topic);
-                        broker.videoList.put(topic, new ArrayList<>(new ArrayList<>()));
+
+                        // Update the hashtags of the specified publisher
+                        broker.publisherHashtags.keySet().stream()
+                                .filter(it -> it.getChannelName().channelName.equals(channelName))
+                                .findFirst()
+                                .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
+
+                        broker.videoList.put(topic, new ArrayList<>());
                         broker.notifyBrokersOnChanges();
                         // Update consumer's broker list
                         broker.updateNodes();
-
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
@@ -346,66 +358,67 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             broker.updateNodes();
                         }
                     } else if (action.equals("subscribe")) {
-                        try {
-                            // Read the consumer object and the topic
-                            Consumer subscriber = (Consumer) in.readObject();
-                            String topic = in.readUTF();
-                            // If the broker is associated with this topic
-                            // and therefore provide videos for it
-                            if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
-                                // If there are no consumers subscribed to this topic
-                                // initialise the repository of consumers that will be
-                                // informed with the video
-                                if (!broker.userHashtags.containsKey(topic)) {
-                                    broker.userHashtags.put(topic, new HashSet<>());
-                                }
-                                // Add the Consumer to the repository and reconstruct the list
-                                // of the videos to be sent to them
-                                broker.userHashtags.get(topic).add(subscriber);
+                        // Read the consumer object and the topic
+                        Consumer subscriber = (Consumer) in.readObject();
+                        String topic = in.readUTF();
+                        // If the broker is associated with this topic
+                        // and therefore provide videos for it
+                        if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
+                            // If there are no consumers subscribed to this topic
+                            // initialise the repository of consumers that will be
+                            // informed with the video
+                            if (!broker.userHashtags.containsKey(topic)) {
+                                broker.userHashtags.put(topic, new HashSet<>());
+                            }
+                            // Add the Consumer to the repository and reconstruct the list
+                            // of the videos to be sent to them
+                            broker.userHashtags.get(topic).add(subscriber);
+                            ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
+                            if (videos != null)
                                 broker.videoList.get(topic).clear();
-                                broker.notifyPublisher(topic);
+                            broker.notifyPublisher(topic);
 
-                                if (!broker.videoList.get(topic).isEmpty()) {
-                                    out.writeInt(0);
-                                    // Create a Set with the videos to be sent the consumer, where
-                                    // the consumer's own videos are excluded
-                                    HashSet<ArrayList<Value>> toSend = new HashSet<>();
-                                    for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                        if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
-                                            toSend.add(video);
-                                    }
-                                    // Send the ammount of videos to be sent
-                                    int numVideos = toSend.size();
-                                    out.writeInt(numVideos);
-                                    for (ArrayList<Value> video : toSend) {
-                                        // Send the ammount chunks each viddeo has
-                                        out.writeInt(video.size());
-                                        for (Value chunk : video) {
-                                            out.writeObject(chunk);
-                                        }
-                                    }
-                                } else {
-                                    out.write(-2);
-                                }
-                                // Ensure that the videos are sent and disconnect
+                            if (!broker.videoList.get(topic).isEmpty()) {
+                                out.writeInt(0);
                                 out.flush();
-                            } else {
-                                boolean found = false;
-                                for (Broker brock : broker.brokerAssociatedHashtags.keySet()) {
-                                    if (broker.brokerAssociatedHashtags.get(brock).contains(topic)) {
-                                        found = true;
-                                        out.writeInt(1);
-                                        out.writeObject(brock);
-                                        break;
+                                // Create a Set with the videos to be sent the consumer, where
+                                // the consumer's own videos are excluded
+                                HashSet<ArrayList<Value>> toSend = new HashSet<>();
+                                for (ArrayList<Value> video : broker.videoList.get(topic)) {
+                                    if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
+                                        toSend.add(video);
+                                }
+                                // Send the amount of videos to be sent
+                                int numVideos = toSend.size();
+                                out.writeInt(numVideos);
+                                out.flush();
+                                for (ArrayList<Value> video : toSend) {
+                                    // Send the amount chunks each video has
+                                    out.writeInt(video.size());
+                                    out.flush();
+                                    for (Value chunk : video) {
+                                        out.writeObject(chunk);
+                                        out.flush();
                                     }
                                 }
-                                if (!found) {
-                                    out.writeInt(-1);
-                                }
+                            } else {
+                                out.write(-2);
                                 out.flush();
                             }
-                        } catch (ClassCastException cc) {
-                            System.out.println("Error: ");
+                        } else {
+                            boolean found = false;
+                            for (Broker brock : broker.brokerAssociatedHashtags.keySet()) {
+                                if (broker.brokerAssociatedHashtags.get(brock).contains(topic)) {
+                                    found = true;
+                                    out.writeInt(1);
+                                    out.writeObject(brock);
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                out.writeInt(-1);
+                            }
+                            out.flush();
                         }
                     } else if (action.equals("unsubscribe")) {
                         // Receive the Consumer object and the topic for unsubscription
@@ -441,35 +454,35 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         broker.brokerAssociatedHashtags.remove(toBeRemoved);
                         System.out.println(TAG + "Broker removed! Port = " + toBeRemoved.config.getPort());
                     } else if (action.equals("notifyNewHashtags")) {
-                        String hash = (String) in.readUTF();
+                        String hash = in.readUTF();
                         HashSet<String> hashtags = (HashSet<String>) in.readObject();
 
                         for (Broker toBeUpdated : broker.brokerAssociatedHashtags.keySet()) {
                             if (toBeUpdated.hash.equals(hash)) {
-                                broker.brokerAssociatedHashtags.put(broker, hashtags);
+                                broker.brokerAssociatedHashtags.put(toBeUpdated, hashtags);
                                 break;
                             }
                         }
-
                         broker.updateNodes();
                     } else if (action.equals("end")) {
                         break;
                     }
                 }
                 // Close streams if defined
+                out.flush();
                 out.close();
                 in.close();
                 socket.close();
             } catch (ClassNotFoundException cf) {
-                System.out.println("Error: invalid cast" + cf.getMessage());
+                System.out.println(TAG + "Error: invalid cast" + cf.getMessage());
             } catch (NullPointerException nu) {
-                System.out.println("Error: Inappropriate connection object, connection failed " + nu.getMessage());
+                System.out.println(TAG + "Error: Inappropriate connection object, connection failed " + nu.getMessage());
                 nu.printStackTrace();
             } catch (IOException io) {
-                System.out.println("Error: problem in input/output " + io.getMessage());
+                System.out.println(TAG + "Error: problem in input/output " + io.getMessage());
                 io.printStackTrace();
             } catch (IllegalStateException e) {
-                System.out.println("Error: " + e.getMessage());
+                System.out.println(TAG + "Error: " + e.getMessage());
             }
         }
     }

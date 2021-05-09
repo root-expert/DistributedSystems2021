@@ -52,7 +52,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
                 System.out.println(TAG + "Received broker's list.");
 
-                hashtagInfo.forEach((broker, strings) -> System.out.println(strings));
+                hashtagInfo.forEach((broker, strings) -> System.out.println("Broker: " + broker.config.getPort() + " tags: " + strings));
 
                 ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
                 this.setBrokers(brokerList);
@@ -85,18 +85,20 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             connection.out.writeUTF(topic);
             connection.out.flush();
             int exitCode = connection.in.readInt();
+
             if (exitCode == 1) {
-                System.out.println("The topic does not exist. Redirecting to correct brocker.");
+                System.out.println(TAG + "The topic does not exist. Redirecting to correct brocker.");
                 disconnect(connection);
                 subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
-                System.out.println("The topic does not exist. Subscription failed.");
+                System.out.println(TAG + "The topic does not exist. Subscription failed.");
             } else if (exitCode == -2) {
-                System.out.println("Subscription successfull. There are no videos currently to receive.");
+                System.out.println(TAG + "Subscription successful. There are no videos currently to receive.");
             } else {
-                System.out.println("Subscription successfull. Receiving videos for new topic.");
+                System.out.println(TAG + "Subscription successful. Receiving videos for new topic.");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
+                System.out.println(TAG + "num of videos" + numVideos);
                 for (int video = 0; video < numVideos; video++) {
                     // Construct the video
                     ArrayList<Value> fullVideo = new ArrayList<>();
@@ -134,11 +136,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             connection.out.flush();
             int exitCode = connection.in.readInt();
             if (exitCode == 0) {
-                System.out.println("Successful unsubscription from topic.");
+                System.out.println(TAG + "Successful unsubscription from topic.");
             } else if (exitCode == -1) {
-                System.out.println("The topic to be unsubscribed from does not exist.");
+                System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {
-                System.out.println("Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
+                System.out.println(TAG + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -155,8 +157,10 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     public void playData(ArrayList<Value> video) {
         Collections.sort(video);
 
+        String videoName = video.get(0).videoFile.videoName.split("_")[0];
+
         try {
-            File file = new File(System.getProperty("user.dir") + "/out/" + video.get(0).videoFile.videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
+            File file = new File(System.getProperty("user.dir") + "/out/" + videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
             FileOutputStream fos = new FileOutputStream(file);
             for (Value v : video) {
                 fos.write(v.videoFile.videoFileChunk);
@@ -168,6 +172,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        System.out.println(TAG + "Successfully recompiled " + videoName);
     }
 
     /**
@@ -240,7 +246,6 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 for (Broker broker : hashtagInfo.keySet()) {
                     if (hashtagInfo.get(broker).contains(topic)) {
                         selected = broker;
-                        break;
                     }
                 }
 

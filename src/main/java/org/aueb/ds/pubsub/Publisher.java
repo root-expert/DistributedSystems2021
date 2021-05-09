@@ -43,9 +43,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 ArrayList<Value> video = generateChunks(file.getName());
                 channelName.userVideoFilesMap.put(file.getName().replace(".mp4", "").split("#")[0], video);
                 for (String h : video.get(0).videoFile.associatedHashtags) {
-                    if (!channelName.hashtagsPublished.contains(h)) {
-                        addHashTag(h);
-                    }
+                    addHashTag(h);
                 }
             }
         }
@@ -135,6 +133,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 ArrayList<Value> chunks = channelName.userVideoFilesMap.get(filename);
                 // Send the number of chunks
                 connection.out.writeInt(chunks.size());
+                connection.out.flush();
                 for (Value chunk : chunks)
                     connection.out.writeObject(chunk);
 
@@ -175,7 +174,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
         Broker broker = hashTopic(hashtag);
-        System.out.println(broker);
         Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
         try {
@@ -185,6 +183,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 connection.out.writeUTF("RemoveHashTag");
             }
             connection.out.writeUTF(hashtag);
+            connection.out.writeUTF(channelName.channelName);
             connection.out.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -272,9 +271,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             }
             raf.close();
         } catch (FileNotFoundException f) {
-            System.out.println("Error: could not find file: " + f.getMessage());
+            System.out.println(TAG + "Error: could not find file: " + f.getMessage());
         } catch (IOException io) {
-            System.out.println("Error: problem during input/output: " + io.getMessage());
+            System.out.println(TAG + "Error: problem during input/output: " + io.getMessage());
         }
         return video;
     }
@@ -459,9 +458,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                                 publisher.channelName.userVideoFilesMap
                                                         .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                                 for (String h : video.get(0).videoFile.associatedHashtags) {
-                                                    if (!publisher.channelName.hashtagsPublished.contains(h)) {
-                                                        publisher.addHashTag(h);
-                                                    }
+                                                    publisher.addHashTag(h);
                                                 }
                                                 if (f.getName().contains(topic)) {
                                                     exitCode = 0;
@@ -498,9 +495,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                                     publisher.channelName.userVideoFilesMap
                                                             .put(f.getName().replace(".mp4", "").split("#")[0], video);
                                                     for (String h : video.get(0).videoFile.associatedHashtags) {
-                                                        if (!publisher.channelName.hashtagsPublished.contains(h)) {
-                                                            publisher.addHashTag(h);
-                                                        }
+                                                        publisher.addHashTag(h);
                                                     }
                                                     exitCode = 0;
                                                 }
@@ -522,7 +517,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 out.close();
                 socket.close();
             } catch (IOException io) {
-                System.out.println("Error in input or output: " + io.getMessage());
+                System.out.println(TAG + "Error in input or output: " + io.getMessage());
             }
         }
     }
