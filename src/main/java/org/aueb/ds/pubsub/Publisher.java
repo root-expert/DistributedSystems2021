@@ -49,7 +49,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 }
             }
         }
+
         addHashTag(channelName.channelName);
+        System.out.println(TAG + "Videos added");
     }
 
     /**
@@ -61,7 +63,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public synchronized void addHashTag(String topic) {
         channelName.hashtagsPublished.add(topic);
         notifyBrokersForHashTags(topic, true);
-        System.out.println("Hashtag added.");
+        System.out.println(TAG + "Topic added: " + topic);
     }
 
     /**
@@ -80,7 +82,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         if (hashtagCount == 1) {
             notifyBrokersForHashTags(hashtag, false);
             channelName.hashtagsPublished.remove(hashtag);
-            System.out.println("Hashtag removed.");
+            System.out.println(TAG + "Topic removed: " + hashtag);
         }
     }
 
