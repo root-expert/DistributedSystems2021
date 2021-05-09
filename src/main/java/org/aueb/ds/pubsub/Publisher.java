@@ -101,12 +101,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         Broker selected = null;
 
         for (Broker broker : brokers) {
-            switch (hashedTopic.compareTo(broker.hash)) {
-                case -1:
-                case 0:
-                    selected = broker;
-                    break;
-                case 1:
+            int res = hashedTopic.compareTo(broker.hash);
+
+            if (res <= 0) {
+                selected = broker;
+                break;
             }
         }
 
