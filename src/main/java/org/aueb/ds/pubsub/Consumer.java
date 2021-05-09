@@ -45,6 +45,8 @@ public class Consumer extends AppNode implements Runnable {
                 hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
                 System.out.println(TAG + "Received broker's list.");
 
+                hashtagInfo.forEach((broker, strings) -> System.out.println(broker));
+
                 ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
                 this.setBrokers(brokerList);
             } catch (IOException | ClassNotFoundException e) {
@@ -218,6 +220,36 @@ public class Consumer extends AppNode implements Runnable {
     @Override
     public void run() {
         init();
+
+        new Thread(() -> {
+            while (true) {
+                System.out.println("Please enter a topic to subscribe: ");
+                Scanner scanner = new Scanner(System.in);
+
+                String topic = scanner.next();
+
+                Broker selected = null;
+
+                for (Broker broker : hashtagInfo.keySet()) {
+                    if (hashtagInfo.get(broker).contains(topic)) {
+                        selected = broker;
+                        break;
+                    }
+                }
+
+                // TODO : Change me
+                if (selected == null)
+                    System.out.println("Couldn't find broker");
+                else
+                    subscribe(selected, topic);
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
 
         try {
             ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
