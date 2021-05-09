@@ -517,10 +517,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                     } else if (action.equals("end")) {
                         break;
                     }
-                    in.close();
-                    out.close();
-                    socket.close();
                 }
+                in.close();
+                out.close();
+                socket.close();
             } catch (IOException io) {
                 System.out.println("Error in input or output: " + io.getMessage());
             }
