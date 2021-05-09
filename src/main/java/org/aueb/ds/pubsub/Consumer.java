@@ -9,7 +9,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class Consumer extends AppNode implements Runnable {
+public class Consumer extends AppNode implements Runnable, Serializable {
+
+    private static final long serialVersionUID = -8644673594536043061L;
 
     protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
@@ -45,7 +47,7 @@ public class Consumer extends AppNode implements Runnable {
                 hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
                 System.out.println(TAG + "Received broker's list.");
 
-                hashtagInfo.forEach((broker, strings) -> System.out.println(broker));
+                hashtagInfo.forEach((broker, strings) -> System.out.println(strings));
 
                 ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
                 this.setBrokers(brokerList);

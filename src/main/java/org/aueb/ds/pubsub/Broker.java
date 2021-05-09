@@ -16,6 +16,8 @@ import java.util.*;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
+    private static final long serialVersionUID = -6648374896546053061L;
+
     private HashSet<Consumer> registeredUsers = new HashSet<>();
     private HashSet<Publisher> registeredPublishers = new HashSet<>();
 
