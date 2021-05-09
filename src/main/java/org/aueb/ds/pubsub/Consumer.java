@@ -87,9 +87,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             int exitCode = connection.in.readInt();
 
             if (exitCode == 1) {
-                System.out.println(TAG + "The topic does not exist. Redirecting to correct brocker.");
+                System.out.println(TAG + "The topic does not exist. Redirecting to correct broker.");
+
+                Broker newBroker = (Broker) connection.in.readObject();
                 disconnect(connection);
-                subscribe((Broker) connection.in.readObject(), topic);
+                subscribe(newBroker, topic);
             } else if (exitCode == -1) {
                 System.out.println(TAG + "The topic does not exist. Subscription failed.");
             } else if (exitCode == -2) {
@@ -98,7 +100,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 System.out.println(TAG + "Subscription successful. Receiving videos for new topic.");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
-                System.out.println(TAG + "num of videos" + numVideos);
+
+                if (numVideos == 0) System.out.println(TAG + "No videos available right now. Try again later!");
                 for (int video = 0; video < numVideos; video++) {
                     // Construct the video
                     ArrayList<Value> fullVideo = new ArrayList<>();
@@ -236,7 +239,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
         new Thread(() -> {
             while (true) {
-                System.out.println("Please enter a topic to subscribe: ");
+                System.out.println(TAG + "Please enter a topic to subscribe: ");
                 Scanner scanner = new Scanner(System.in);
 
                 String topic = scanner.next();
@@ -249,13 +252,15 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                     }
                 }
 
-                // TODO : Change me
-                if (selected == null)
-                    System.out.println("Couldn't find broker");
-                else
-                    subscribe(selected, topic);
+                if (selected == null) {
+                    System.out.println(TAG + "Couldn't find broker. Picking a random one");
+                    int randomIdx = new Random().nextInt(hashtagInfo.size());
+                    selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+                }
+                subscribe(selected, topic);
+
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
