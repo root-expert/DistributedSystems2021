@@ -11,7 +11,10 @@ import org.aueb.ds.util.MetadataExtract;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -107,8 +110,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             }
         }
 
-        if (selected == null)
-            selected = brokers.get(new Random().nextInt(brokers.size()));
+        if (selected == null) selected = brokers.get(0);
 
         return selected;
     }
