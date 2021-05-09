@@ -325,7 +325,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         String topic = in.readUTF();
                         // if it does not already exist in this broker's collection add it
                         broker.brokerAssociatedHashtags.get(broker).add(topic);
-                        broker.videoList.put(topic, new ArrayList<>());
+                        broker.videoList.put(topic, new ArrayList<>(new ArrayList<>()));
                         broker.notifyBrokersOnChanges();
                         // Update consumer's broker list
                         broker.updateNodes();
@@ -440,6 +440,18 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Broker toBeRemoved = (Broker) in.readObject();
                         broker.brokerAssociatedHashtags.remove(toBeRemoved);
                         System.out.println(TAG + "Broker removed! Port = " + toBeRemoved.config.getPort());
+                    } else if (action.equals("notifyNewHashtags")) {
+                        String hash = (String) in.readUTF();
+                        HashSet<String> hashtags = (HashSet<String>) in.readObject();
+
+                        for (Broker toBeUpdated : broker.brokerAssociatedHashtags.keySet()) {
+                            if (toBeUpdated.hash.equals(hash)) {
+                                broker.brokerAssociatedHashtags.put(broker, hashtags);
+                                break;
+                            }
+                        }
+
+                        broker.updateNodes();
                     } else if (action.equals("end")) {
                         break;
                     }
