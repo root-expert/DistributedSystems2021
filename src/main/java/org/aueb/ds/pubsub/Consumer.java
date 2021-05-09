@@ -17,11 +17,13 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
     private static final String TAG = "[Consumer] ";
 
+    protected AppNodeConfig config;
+
     public Consumer() {
     }
 
     public Consumer(AppNodeConfig conf) {
-        super(conf);
+        this.config = conf;
     }
 
     /**

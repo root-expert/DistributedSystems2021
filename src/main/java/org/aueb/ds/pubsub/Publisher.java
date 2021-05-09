@@ -21,12 +21,14 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     private final String lock = "";
     private static final String TAG = "[Publisher] ";
 
+    protected AppNodeConfig config;
+
     public Publisher() {
 
     }
 
     public Publisher(AppNodeConfig conf) {
-        super(conf);
+        this.config = conf;
     }
 
     @Override
@@ -171,6 +173,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public void notifyBrokersForHashTags(String hashtag, boolean add) {
         Broker broker = hashTopic(hashtag);
+        System.out.println(broker);
         Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
         try {

@@ -2,7 +2,6 @@ package org.aueb.ds.pubsub;
 
 import org.aueb.ds.model.Connection;
 import org.aueb.ds.model.Node;
-import org.aueb.ds.model.config.AppNodeConfig;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -13,14 +12,14 @@ import java.util.ArrayList;
 public class AppNode implements Node {
 
     private static ArrayList<Broker> brokers = new ArrayList<>();
-    protected static AppNodeConfig config;
+    //protected static AppNodeConfig config;
 
     public AppNode() {
     }
 
-    public AppNode(AppNodeConfig conf) {
+    /* public AppNode(AppNodeConfig conf) {
         config = conf;
-    }
+    } */
 
     @Override
     public void init() {

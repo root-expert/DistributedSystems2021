@@ -451,7 +451,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (ClassNotFoundException cf) {
                 System.out.println("Error: invalid cast" + cf.getMessage());
             } catch (NullPointerException nu) {
-                System.out.println("Error: Inappropriate connection object, connection failed" + nu.getMessage());
+                System.out.println("Error: Inappropriate connection object, connection failed " + nu.getMessage());
+                nu.printStackTrace();
             } catch (IOException io) {
                 System.out.println("Error: problem in input/output " + io.getMessage());
                 io.printStackTrace();
