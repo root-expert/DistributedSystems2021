@@ -201,7 +201,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public ArrayList<Value> generateChunks(String filename) {
         ArrayList<Value> video = null;
-        final int chunkSize = 512 * 1024;
+        final int chunkSize = 1024 * 1024;
 
         try {
             // Generate the proper filename to use for the File class
