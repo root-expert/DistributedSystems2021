@@ -15,6 +15,9 @@ public class AppNode implements Node {
     private static ArrayList<Broker> brokers = new ArrayList<>();
     protected static AppNodeConfig config;
 
+    public AppNode() {
+    }
+
     public AppNode(AppNodeConfig conf) {
         config = conf;
     }

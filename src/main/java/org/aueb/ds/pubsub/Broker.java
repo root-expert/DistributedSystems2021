@@ -38,6 +38,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     protected BrokerConfig config;
     protected String hash;
 
+    public Broker() {
+    }
+
     public Broker(BrokerConfig config) {
         this.config = config;
     }

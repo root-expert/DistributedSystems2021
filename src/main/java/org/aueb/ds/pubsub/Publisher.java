@@ -18,8 +18,12 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     private static final long serialVersionUID = -6645374596536043061L;
 
     private ChannelName channelName;
-    private final Object lock = new Object();
+    private final String lock = "";
     private static final String TAG = "[Publisher] ";
+
+    public Publisher() {
+
+    }
 
     public Publisher(AppNodeConfig conf) {
         super(conf);
