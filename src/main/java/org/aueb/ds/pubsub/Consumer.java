@@ -89,15 +89,13 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             if (exitCode == 1) {
                 System.out.println(TAG + "The topic does not exist. Redirecting to correct broker.");
 
-                Broker newBroker = (Broker) connection.in.readObject();
-                disconnect(connection);
-                subscribe(newBroker, topic);
+                subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
-                System.out.println(TAG + "The topic does not exist. Subscription failed.");
+                System.out.println(TAG + "The topic does not exist. Please pick a different one!");
             } else if (exitCode == -2) {
-                System.out.println(TAG + "Subscription successful. There are no videos currently to receive.");
+                System.out.println(TAG + "Subscription successful. There are no videos currently to receive!");
             } else {
-                System.out.println(TAG + "Subscription successful. Receiving videos for new topic.");
+                System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
 
@@ -259,7 +257,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 subscribe(selected, topic);
 
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
