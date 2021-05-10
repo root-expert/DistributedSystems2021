@@ -115,7 +115,6 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * @param topic The channelName or hashTag to pull data
      */
     public void pull(Publisher publisher, String topic) {
-        ArrayList<Value> chunkList = new ArrayList<>();
 
         Connection connection = null;
         try {
@@ -128,19 +127,18 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 int numOfVideos = connection.in.readInt();
                 for (int i = 1; i <= numOfVideos; i++) {
                     int numOfChunks = connection.in.readInt();
-                    chunkList.clear();
+                    ArrayList<Value> chunkList = new ArrayList<>();
                     for (int j = 1; j <= numOfChunks; j++) {
                         chunkList.add((Value) connection.in.readObject());
                     }
 
                     ArrayList<ArrayList<Value>> videos = videoList.get(topic);
 
-                    if (videos != null)
-                        videos.add(chunkList);
-                    else {
-                        videoList.put(topic, new ArrayList<>());
-                        videoList.get(topic).add(chunkList);
-                    }
+                    if (videos == null)
+                        videos = new ArrayList<>();
+
+                    videos.add(chunkList);
+                    videoList.put(topic, videos);
                 }
             }
 
