@@ -36,7 +36,22 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void init() {
-        //Intitialise the channel name object 
+        boolean brokersAvailable = false;
+
+        while (!brokersAvailable) {
+            if (this.getBrokers().isEmpty()) {
+                System.out.println(TAG + "No available broker. Waiting 5 seconds.");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            } else {
+                brokersAvailable = true;
+            }
+        }
+
+        // Initialize the channel name object
         channelName = new ChannelName(config.getChannelName());
 
         //Find all the videos on the Publisher's folder
