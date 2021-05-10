@@ -158,7 +158,6 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      * @param video The Value object with video chunks.
      */
     public void playData(ArrayList<Value> video) {
-        Collections.sort(video);
 
         String videoName = video.get(0).videoFile.videoName.split("_")[0];
 
