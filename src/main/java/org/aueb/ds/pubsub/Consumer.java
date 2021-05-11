@@ -98,8 +98,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
-
                 if (numVideos == 0) System.out.println(TAG + "No videos available right now. Try again later!");
+
                 for (int video = 0; video < numVideos; video++) {
                     // Construct the video
                     ArrayList<Value> fullVideo = new ArrayList<>();
@@ -243,16 +243,18 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
                 Broker selected = null;
 
-                for (Broker broker : hashtagInfo.keySet()) {
-                    if (hashtagInfo.get(broker).contains(topic)) {
-                        selected = broker;
+                synchronized (this) {
+                    for (Broker broker : hashtagInfo.keySet()) {
+                        if (hashtagInfo.get(broker).contains(topic)) {
+                            selected = broker;
+                        }
                     }
-                }
 
-                if (selected == null) {
-                    System.out.println(TAG + "Couldn't find broker. Picking a random one");
-                    int randomIdx = new Random().nextInt(hashtagInfo.size());
-                    selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+                    if (selected == null) {
+                        System.out.println(TAG + "Couldn't find broker. Picking a random one");
+                        int randomIdx = new Random().nextInt(hashtagInfo.size());
+                        selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+                    }
                 }
                 subscribe(selected, topic);
 
@@ -300,12 +302,16 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                     if (action.equals("updateBrokerList")) {
                         Broker broker = (Broker) in.readObject();
                         HashSet<String> hashtags = (HashSet<String>) in.readObject();
-                        consumer.hashtagInfo.put(broker, hashtags);
+
+                        synchronized (consumer) {
+                            consumer.hashtagInfo.put(broker, hashtags);
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
                 }
                 // Close streams if defined
+                out.flush();
                 out.close();
                 in.close();
                 socket.close();
