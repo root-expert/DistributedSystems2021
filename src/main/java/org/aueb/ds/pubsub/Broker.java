@@ -59,8 +59,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
     /**
      * 
-     * @param videoS the list of videos(chunked) to be sent to the certain Consumer
-     * @param channel the channel name of the consumer we have to filter videos to
+     * @param videoS the list of videos(chunked) to be sent to the Consumer
+     * @param channel the channel name of the consumer we have to send videos to
      * @return the set of videos that can be sent to the consumer without
      *  overlappinng with videos the consumer already has
      */
@@ -420,7 +420,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     // Create a Set with the videos to be sent the consumer, where
                                     // the consumer's own videos are excluded
                                     HashSet<ArrayList<Value>> toSend=broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
-                                    
+
                                     // Send the amount of videos to be sent
                                     int numVideos = toSend.size();
                                     out.writeInt(numVideos);
