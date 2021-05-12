@@ -62,7 +62,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     /**
      * 
-     * @param videoS  the list of videos(chunked) to be sent to the Consumer
+     * @param videos  the list of videos(chunked) to be sent to the Consumer
      * @param channel the channel name of the consumer we have to send videos to
      * @return the set of videos that can be sent to the consumer without
      *         overlappinng with videos the consumer already has
