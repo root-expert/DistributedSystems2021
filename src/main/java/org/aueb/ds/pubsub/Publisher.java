@@ -21,7 +21,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     private static final long serialVersionUID = -6645374596536043061L;
 
     private ChannelName channelName;
-    private final String lock = "";
     private static final String TAG = "[Publisher] ";
 
     protected AppNodeConfig config;
@@ -144,7 +143,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         connection.out.writeInt(videos.size());
         connection.out.flush();
 
-        synchronized (lock) {
+        synchronized (this) {
             for (String filename : videos) {
                 ArrayList<Value> chunks = channelName.userVideoFilesMap.get(filename);
                 // Send the number of chunks
@@ -399,7 +398,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             // filenames to push
                             HashSet<String> toSend = new HashSet<>();
 
-                            synchronized (publisher.lock) {
+                            synchronized (publisher) {
                                 // for every hashtag in the user's videos
                                 for (String filename : cn.userVideoFilesMap.keySet()) {
                                     // Search for the hashtag in the hashtags that concern this video
@@ -424,7 +423,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             // search hashtags
                         } else {
                             // if it's a channel name, every video of the publisher is pushed
-                            synchronized (publisher.lock) {
+                            synchronized (publisher) {
                                 if (cn.channelName.equals(topic)) {
                                     if (!cn.userVideoFilesMap.isEmpty()) {
                                         HashSet<String> videos = new HashSet<>(cn.userVideoFilesMap.keySet());
@@ -447,7 +446,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         ChannelName cn = publisher.channelName;
 
                         if (topic.startsWith("#")) {
-                            synchronized (publisher.lock) {
+                            synchronized (publisher) {
                                 for (String i : cn.userVideoFilesMap.keySet()) {
                                     // If there are videos that the Broker can pull related to this hashtag
                                     if (cn.userVideoFilesMap.get(i).get(0).videoFile.associatedHashtags.contains(topic)) {
@@ -463,7 +462,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                  */
                                 File folder = new File(System.getProperty("user.dir"));
 
-                                synchronized (publisher.lock) {
+                                synchronized (publisher) {
                                     for (File f : folder.listFiles()) {
                                         if (f.getName().contains(".mp4")) {
                                             if (!publisher.channelName.userVideoFilesMap
@@ -489,7 +488,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         } else {
                             if (cn.channelName.equals(topic)) {
                                 // If there are videos of the current channel that the Broker can pull
-                                synchronized (publisher.lock) {
+                                synchronized (publisher) {
                                     if (!cn.userVideoFilesMap.isEmpty()) {
                                         exitCode = 0;
                                     } else {
