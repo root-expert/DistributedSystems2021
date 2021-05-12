@@ -409,8 +409,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                     .get(0).videoFile.associatedHashtags) {
                                 removeHashTag(hashtag);
                             }
-                        }else {
-                            System.out.println(TAG+"there is no video with that name to be removed");
+                        } else {
+                            System.out.println(TAG + "there is no video with that name to be removed");
                         }
                         // remove the video from the publisher's publish list
                         channelName.userVideoFilesMap.remove(removeName);
@@ -423,13 +423,13 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             if (file.getName().contains(".mp4")
                                     && file.getName().replace(".mp4", "").split("#")[0].equals(removeName)) {
                                 file.renameTo(new File(file.getName().replace(".mp4", ".removed")));
-                                System.out.println(TAG+"Successfully removed video: "+removeName);
+                                System.out.println(TAG + "Successfully removed video: " + removeName);
                             }
                         }
                         break;
                     case 3:
-                        //TODO: implement exir() or the equivalent method
-                        System.out.println(TAG+"Exiting...");
+                        // TODO: implement exir() or the equivalent method
+                        System.out.println(TAG + "Exiting...");
                         break;
                 }
                 scanner.close();
