@@ -67,7 +67,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * @return the set of videos that can be sent to the consumer without
      *         overlappinng with videos the consumer already has
      */
-    public HashSet<ArrayList<Value>> filterConsumers(ArrayList<ArrayList<Value>> videos, String channel) {
+    private HashSet<ArrayList<Value>> filterConsumers(ArrayList<ArrayList<Value>> videos, String channel) {
         HashSet<ArrayList<Value>> toSend = new HashSet<>();
         // for each video in the requested
         for (ArrayList<Value> video : videos) {
