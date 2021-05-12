@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -54,7 +55,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         // Initialize the channel name object
         channelName = new ChannelName(config.getChannelName());
 
-        //Find all the videos on the Publisher's folder
+        // Find all the videos on the Publisher's folder
         File cwd = new File(System.getProperty("user.dir"));
         for (File file : cwd.listFiles()) {
             if (file.getName().contains(".mp4")) {
@@ -71,8 +72,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Add hashtag or channelName to ChannelName's List ("#viral").
-     * Inform Brokers.
+     * Add hashtag or channelName to ChannelName's List ("#viral"). Inform Brokers.
      *
      * @param topic HashTag or channelName added.
      */
@@ -83,8 +83,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Remove hashtag from ChannelName's List ("#viral").
-     * Inform Brokers if hashtag is not used in any other Publisher's video.
+     * Remove hashtag from ChannelName's List ("#viral"). Inform Brokers if hashtag
+     * is not used in any other Publisher's video.
      *
      * @param hashtag HashTag removed.
      */
@@ -124,7 +124,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             }
         }
 
-        if (selected == null) selected = brokers.get(0);
+        if (selected == null)
+            selected = brokers.get(0);
 
         return selected;
     }
@@ -340,8 +341,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Publisher publisher = (Publisher) o;
         return channelName.channelName.equals(publisher.channelName.channelName);
     }
@@ -354,7 +357,84 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     @Override
     public void run() {
         init();
+        new Thread(() -> {
 
+            while (true) {
+                File cwd = null;
+                System.out.println(TAG + "Please choose an action(1-3):");
+                System.out.println("[1]: Upload video");
+                System.out.println("[2]: Remove video");
+                System.out.println("[3]: Exit");
+                Scanner scanner = new Scanner(System.in);
+                int answer = -1;
+                do {
+                    answer = scanner.nextInt();
+                } while (answer >= 1 && answer <= 3);
+                switch (answer) {
+                    case 1:
+                        // The name of the video to be uploaded
+                        String uploadName = scanner.nextLine();
+                        cwd = new File(System.getProperty("user.dir"));
+
+                        // Search for the requestd video in the local folder
+                        File videoFile = null;
+                        for (File file : cwd.listFiles()) {
+                            if (file.getName().contains(".mp4")
+                                    && file.getName().replace(".mp4", "").split("#")[0].equals(uploadName))
+                                videoFile = file;
+                            break;
+                        }
+
+                        // If the video has been found add it tot the uservideofilemap and inform the
+                        // broker for new hashtags
+                        if (videoFile != null) {
+                            ArrayList<Value> video = generateChunks(videoFile.getName());
+                            channelName.userVideoFilesMap.put(videoFile.getName().replace(".mp4", "").split("#")[0],
+                                    video);
+                            for (String h : video.get(0).videoFile.associatedHashtags) {
+                                addHashTag(h);
+                            }
+                            System.out.println(TAG + "Video " + videoFile.getName() + " added succesfully!");
+
+                        } else {
+                            System.out.println(TAG + "The video requested does not exist.");
+                        }
+                        break;
+                    case 2:
+                        // The name (without the .mp4 extention) of the video to be uploaded
+                        String removeName = scanner.nextLine();
+                        // remove the video's hashtags
+                        if (channelName.userVideoFilesMap.keySet().contains(removeName)) {
+                            for (String hashtag : channelName.userVideoFilesMap.get(removeName)
+                                    .get(0).videoFile.associatedHashtags) {
+                                removeHashTag(hashtag);
+                            }
+                        }else {
+                            System.out.println(TAG+"there is no video with that name to be removed");
+                        }
+                        // remove the video from the publisher's publish list
+                        channelName.userVideoFilesMap.remove(removeName);
+                        cwd = new File(System.getProperty("user.dir"));
+
+                        // Search for the requestd video in the local folder and change it's .mp4
+                        // extension to a .removed extenstion to hide it from further searches without
+                        // losing its data
+                        for (File file : cwd.listFiles()) {
+                            if (file.getName().contains(".mp4")
+                                    && file.getName().replace(".mp4", "").split("#")[0].equals(removeName)) {
+                                file.renameTo(new File(file.getName().replace(".mp4", ".removed")));
+                                System.out.println(TAG+"Successfully removed video: "+removeName);
+                            }
+                        }
+                        break;
+                    case 3:
+                        //TODO: implement exir() or the equivalent method
+                        System.out.println(TAG+"Exiting...");
+                        break;
+                }
+                scanner.close();
+            }
+        }).start();
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
             while (true) {
@@ -450,7 +530,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                             synchronized (publisher.lock) {
                                 for (String i : cn.userVideoFilesMap.keySet()) {
                                     // If there are videos that the Broker can pull related to this hashtag
-                                    if (cn.userVideoFilesMap.get(i).get(0).videoFile.associatedHashtags.contains(topic)) {
+                                    if (cn.userVideoFilesMap.get(i).get(0).videoFile.associatedHashtags
+                                            .contains(topic)) {
                                         exitCode = 0;
                                     }
                                 }
@@ -468,7 +549,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                         if (f.getName().contains(".mp4")) {
                                             if (!publisher.channelName.userVideoFilesMap
                                                     .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
-                                                // Add chunked video in the channel name video hashmap for later use,and return
+                                                // Add chunked video in the channel name video hashmap for later use,and
+                                                // return
                                                 // the hashed video
                                                 ArrayList<Value> video = publisher.generateChunks(f.getName());
                                                 publisher.channelName.userVideoFilesMap
@@ -499,12 +581,12 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                          * them into the user's available videos
                                          */
                                         File folder = new File(System.getProperty("user.dir"));
-                                        // TODO: assign appropriate file
                                         for (File f : folder.listFiles()) {
                                             if (f.getName().contains(".mp4")) {
                                                 if (!publisher.channelName.userVideoFilesMap
                                                         .containsKey(f.getName().replace(".mp4", "").split("#")[0])) {
-                                                    // Add chunked viedo in the channel name video hashmap for later use,and
+                                                    // Add chunked viedo in the channel name video hashmap for later
+                                                    // use,and
                                                     // return
                                                     // the hashed video
                                                     ArrayList<Value> video = publisher.generateChunks(f.getName());
