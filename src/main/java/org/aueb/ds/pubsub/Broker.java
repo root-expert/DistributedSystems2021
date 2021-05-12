@@ -57,6 +57,24 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
         brokerAssociatedHashtags.put(this, new HashSet<>());
     }
+    /**
+     * 
+     * @param videoS the list of videos(chunked) to be sent to the certain Consumer
+     * @param channel the channel name of the consumer we have to filter videos to
+     * @return the set of videos that can be sent to the consumer without
+     *  overlappinng with videos the consumer already has
+     */
+    public HashSet<ArrayList<Value>> filterConsumers(ArrayList<ArrayList<Value>>videoS,String channel){
+        HashSet<ArrayList<Value>> toSend=new HashSet<>();
+        // for each video in the requested
+        for(ArrayList<Value> video:videoS){
+            // if the video's channel of origin does not match the consumer's channel mark it to be sent 
+            if (!video.get(0).videoFile.channelName.equals(channel)){
+                toSend.add(video);
+            }
+        }
+        return toSend;
+    }
 
     public synchronized void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
@@ -401,11 +419,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     out.flush();
                                     // Create a Set with the videos to be sent the consumer, where
                                     // the consumer's own videos are excluded
-                                    HashSet<ArrayList<Value>> toSend = new HashSet<>();
-                                    for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                        if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
-                                            toSend.add(video);
-                                    }
+                                    HashSet<ArrayList<Value>> toSend=broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
+                                    
                                     // Send the amount of videos to be sent
                                     int numVideos = toSend.size();
                                     out.writeInt(numVideos);
