@@ -238,7 +238,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      * @param topic ChannelName or Hashtag to search for
      * @return selected Broker
      */
-    public Broker findBroker(String topic) {
+    private Broker findBroker(String topic) {
         Broker selected = null;
 
         synchronized (this) {
@@ -270,6 +270,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 Scanner scanner = new Scanner(System.in);
                 int ans;
                 do {
+                    System.out.print("Choose a number for your action: ");
                     ans = scanner.nextInt();
                 } while (ans != 1 && ans != 2 && ans != 3);
 
