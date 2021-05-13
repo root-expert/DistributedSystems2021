@@ -54,16 +54,55 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         File cwd = new File(System.getProperty("user.dir"));
         for (File file : cwd.listFiles()) {
             if (file.getName().contains(".mp4")) {
-                ArrayList<Value> video = generateChunks(file.getName());
-                channelName.userVideoFilesMap.put(file.getName().replace(".mp4", "").split("#")[0], video);
-                for (String h : video.get(0).videoFile.associatedHashtags) {
-                    addHashTag(h);
-                }
+                addVideo(file.getName());
             }
         }
 
         addHashTag(channelName.channelName);
         System.out.println(TAG + "Videos added");
+    }
+
+    /**
+     * Adds video from the current publisher
+     * 
+     * @param fileName the name of the .mp4 video file
+     */
+    public void addVideo(String fileName) {
+        ArrayList<Value> videos = generateChunks(fileName);
+        if (!channelName.userVideoFilesMap.keySet().contains(fileName.replace(".mp4", "").split("#")[0])) {
+            channelName.userVideoFilesMap.put(fileName.replace(".mp4", "").split("#")[0], videos);
+            for (String hash : videos.get(0).videoFile.associatedHashtags) {
+                addHashTag(hash);
+            }
+        }
+    }
+
+    /**
+     * Removes a video from the the Publisher
+     * 
+     * @param filename the video file name to be removed
+     */
+    public void removeVideo(String filename) {
+        String actualName = filename.replace(".mp4", "").split("#")[0];
+        if (channelName.userVideoFilesMap.keySet().contains(actualName)) {
+            for (String hashtag : channelName.userVideoFilesMap.get(actualName).get(0).videoFile.associatedHashtags) {
+                removeHashTag(hashtag);
+            }
+        } else {
+            System.out.println(TAG + "there is no video with that name to be removed");
+        }
+        // remove the video from the publisher's video list
+        channelName.userVideoFilesMap.remove(actualName);
+        File cwd = new File(System.getProperty("user.dir"));
+        for (File video : cwd.listFiles()) {
+            if (video.getName().contains(".mp4")
+                    || video.getName().replace(".mp4", "").split("#")[0].equals(actualName)) {
+                video.renameTo(new File(video.getName().replace(".mp4", ".removed")));
+                return;
+            }
+
+        }
+        System.out.println("The video did not exist.");
     }
 
     /**
@@ -383,14 +422,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         // If the video has been found add it tot the uservideofilemap and inform the
                         // broker for new hashtags
                         if (videoFile != null) {
-                            ArrayList<Value> video = generateChunks(videoFile.getName());
-                            channelName.userVideoFilesMap.put(videoFile.getName().replace(".mp4", "").split("#")[0],
-                                    video);
-                            for (String h : video.get(0).videoFile.associatedHashtags) {
-                                addHashTag(h);
-                            }
-                            System.out.println(TAG + "Video " + videoFile.getName() + " added succesfully!");
-
+                            addVideo(videoFile.getName());
                         } else {
                             System.out.println(TAG + "The video requested does not exist.");
                         }
@@ -399,28 +431,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         // The name (without the .mp4 extention) of the video to be uploaded
                         String removeName = scanner.nextLine();
                         // remove the video's hashtags
-                        if (channelName.userVideoFilesMap.keySet().contains(removeName)) {
-                            for (String hashtag : channelName.userVideoFilesMap.get(removeName)
-                                    .get(0).videoFile.associatedHashtags) {
-                                removeHashTag(hashtag);
-                            }
-                        } else {
-                            System.out.println(TAG + "there is no video with that name to be removed");
-                        }
-                        // remove the video from the publisher's publish list
-                        channelName.userVideoFilesMap.remove(removeName);
-                        cwd = new File(System.getProperty("user.dir"));
-
-                        // Search for the requestd video in the local folder and change it's .mp4
-                        // extension to a .removed extenstion to hide it from further searches without
-                        // losing its data
-                        for (File file : cwd.listFiles()) {
-                            if (file.getName().contains(".mp4")
-                                    && file.getName().replace(".mp4", "").split("#")[0].equals(removeName)) {
-                                file.renameTo(new File(file.getName().replace(".mp4", ".removed")));
-                                System.out.println(TAG + "Successfully removed video: " + removeName);
-                            }
-                        }
+                        removeVideo(removeName);
                         break;
                     case 3:
                         // TODO: implement exir() or the equivalent method
