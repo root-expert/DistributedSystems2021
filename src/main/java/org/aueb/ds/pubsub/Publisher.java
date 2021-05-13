@@ -80,7 +80,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     /**
      * Removes a video from the the Publisher
      * 
-     * @param filename the video file name to be removed
+     * @param filename the video file name to be removed(either the video name or the .mp4 file name)
      */
     public void removeVideo(String filename) {
         String actualName = filename.replace(".mp4", "").split("#")[0];
@@ -110,7 +110,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param topic HashTag or channelName added.
      */
-    public synchronized void addHashTag(String topic) {
+    private synchronized void addHashTag(String topic) {
         channelName.hashtagsPublished.add(topic);
         notifyBrokersForHashTags(topic, true);
         System.out.println(TAG + "Topic added: " + topic);
@@ -122,7 +122,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param hashtag HashTag removed.
      */
-    public synchronized void removeHashTag(String hashtag) {
+    private synchronized void removeHashTag(String hashtag) {
         int hashtagCount = 0;
         for (ArrayList<Value> list : channelName.userVideoFilesMap.values()) {
             if (list.get(0).videoFile.associatedHashtags.contains(hashtag)) {
@@ -142,7 +142,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param topic Topic to hash.
      * @return The broker which is responsible for the specified topic.
      */
-    public Broker hashTopic(String topic) {
+    private Broker hashTopic(String topic) {
         String hashedTopic = new Hashing().md5Hash(topic);
 
         ArrayList<Broker> brokers = this.getBrokers();
@@ -170,7 +170,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param connection The Connection object to send data on top of it.
      * @param videos     Videos to be send.
      */
-    public void push(Connection connection, HashSet<String> videos) throws IOException {
+    private void push(Connection connection, HashSet<String> videos) throws IOException {
         /*
          * if there are videos to be sent send 0 as a success code. Also send how many
          * video we are ready to send.
@@ -202,7 +202,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param broker The Broker to notify.
      */
-    public void notifyFailure(Broker broker) {
+    private void notifyFailure(Broker broker) {
         Connection connection = null;
 
         try {
@@ -223,7 +223,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param hashtag The hashtag to be notified.
      */
-    public void notifyBrokersForHashTags(String hashtag, boolean add) {
+    private void notifyBrokersForHashTags(String hashtag, boolean add) {
         Broker broker = hashTopic(hashtag);
         Connection connection = connect(broker.config.getIp(), broker.config.getPort());
 
@@ -250,7 +250,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
-    public ArrayList<Value> generateChunks(String filename) {
+    private ArrayList<Value> generateChunks(String filename) {
         ArrayList<Value> video = null;
         final int chunkSize = 1024 * 1024;
 
