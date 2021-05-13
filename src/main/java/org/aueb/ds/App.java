@@ -85,7 +85,7 @@ public class App {
                         } while (ans != 1 && ans != 2 && ans != 3);
 
                         if (ans == 1) {
-                            System.out.println(consumer.TAG + "Please enter a topic to subscribe: ");
+                            System.out.print(consumer.TAG + "Please enter a topic to subscribe: ");
                             String topic = scanner.next();
                             consumer.subscribe(consumer.findBroker(topic), topic);
                             // if (consumer.subscribedItems.contains(topic)) {
