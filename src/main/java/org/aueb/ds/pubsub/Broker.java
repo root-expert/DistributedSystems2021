@@ -219,7 +219,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         for (Consumer consumer : registeredUsers) {
             Connection connection = null;
             try {
-                connection = connect(consumer.config.getIp(), consumer.config.getPublisherPort());
+                connection = connect(consumer.config.getIp(), consumer.config.getConsumerPort());
                 connection.out.writeUTF("updateBrokerList");
                 connection.out.writeObject(this);
                 connection.out.writeObject(brokerAssociatedHashtags.get(this));
