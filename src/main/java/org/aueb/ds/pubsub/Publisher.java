@@ -70,7 +70,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void addVideo(String fileName) {
         ArrayList<Value> videos = generateChunks(fileName);
         String actualName=fileName.replace(".mp4", "").split("#")[0];
-        if (!channelName.userVideoFilesMap.keySet().contains(actualName)) {
+        if (!channelName.userVideoFilesMap.containsKey(actualName)) {
             channelName.userVideoFilesMap.put(actualName, videos);
             for (String hash : videos.get(0).videoFile.associatedHashtags) {
                 addHashTag(hash);
@@ -85,7 +85,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public void removeVideo(String filename) {
         String actualName = filename.replace(".mp4", "").split("#")[0];
-        if (channelName.userVideoFilesMap.keySet().contains(actualName)) {
+        if (channelName.userVideoFilesMap.containsKey(actualName)) {
             for (String hashtag : channelName.userVideoFilesMap.get(actualName).get(0).videoFile.associatedHashtags) {
                 removeHashTag(hashtag);
             }
@@ -101,7 +101,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 video.renameTo(new File(video.getName().replace(".mp4", ".removed")));
                 return;
             }
-
         }
         System.out.println("The video did not exist.");
     }
