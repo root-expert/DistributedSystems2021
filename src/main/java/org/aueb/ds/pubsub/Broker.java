@@ -61,7 +61,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     /**
-     * 
+     *
      * @param videos  the list of videos(chunked) to be sent to the Consumer
      * @param channel the channel name of the consumer we have to send videos to
      * @return the set of videos that can be sent to the consumer without
@@ -110,7 +110,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * Notifies the rest of the brokers for changes on the hashtags this specific
      * broker is responsible for.
      */
-    public synchronized void notifyBrokersOnChanges() {
+    public void notifyBrokersOnChanges() {
         for (Broker broker : brokerAssociatedHashtags.keySet()) {
             if (broker.hash.equals(this.hash))
                 continue;
@@ -215,7 +215,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     /*
      * Update Consumer's Broker list after a hashtag has been added or removed.
      */
-    public synchronized void updateNodes() {
+    public void updateNodes() {
         for (Consumer consumer : registeredUsers) {
             Connection connection = null;
             try {
@@ -231,6 +231,40 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 disconnect(connection);
             }
         }
+    }
+
+    private void updatePendingConsumers(String topic) {
+        HashSet<Consumer> consumers = this.userHashtags.get(topic);
+        ArrayList<ArrayList<Value>> availableVideos = videoList.get(topic);
+
+        consumers.forEach(consumer ->
+        {
+            HashSet<ArrayList<Value>> toSend = this.filterConsumers(availableVideos, consumer.channelName);
+            try {
+                pushToConsumer(consumer, toSend);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void pushToConsumer(Consumer consumer, HashSet<ArrayList<Value>> toSend) throws IOException {
+        if (toSend.isEmpty()) return;
+
+        Connection connection;
+
+        connection = connect(consumer.config.getIp(), consumer.config.getConsumerPort());
+        connection.out.writeUTF("newVideos");
+        connection.out.writeInt(toSend.size());
+
+        for (ArrayList<Value> video : toSend) {
+            connection.out.writeInt(video.size());
+            for (Value chunk : video) {
+                connection.out.writeObject(chunk);
+            }
+        }
+
+        connection.out.flush();
     }
 
     @Override
@@ -363,10 +397,13 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
 
                             broker.videoList.put(topic, new ArrayList<>());
+
+                            broker.notifyBrokersOnChanges();
+                            // Update consumer's broker list
+                            broker.updateNodes();
+
+                            broker.updatePendingConsumers(topic);
                         }
-                        broker.notifyBrokersOnChanges();
-                        // Update consumer's broker list
-                        broker.updateNodes();
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
@@ -515,8 +552,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     break;
                                 }
                             }
+                            broker.updateNodes();
                         }
-                        broker.updateNodes();
                     } else if (action.equals("end")) {
                         break;
                     }

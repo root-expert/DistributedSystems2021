@@ -303,6 +303,19 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                         synchronized (consumer) {
                             consumer.hashtagInfo.put(broker, hashtags);
                         }
+                    } else if (action.equals("newVideos")) {
+                        System.out.println(TAG + "Receiving new videos...");
+                        int numOfVideos = in.readInt();
+
+                        for (int i = 0; i < numOfVideos; i++) {
+                            ArrayList<Value> video = new ArrayList<>();
+                            int numOfChunks = in.readInt();
+                            for (int j = 0; j < numOfChunks; j++) {
+                                video.add((Value) in.readObject());
+                            }
+
+                            consumer.playData(video);
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
