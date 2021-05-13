@@ -15,8 +15,9 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
     protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
-    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics (channelName/Hashtags)
-    private static final String TAG = "[Consumer] ";
+    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics
+                                                                   // (channelName/Hashtags)
+    public static final String TAG = "[Consumer] ";
 
     protected AppNodeConfig config;
 
@@ -53,7 +54,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
                 System.out.println(TAG + "Received broker's list.");
 
-                hashtagInfo.forEach((broker, strings) -> System.out.println("Broker: " + broker.config.getPort() + " tags: " + strings));
+                hashtagInfo.forEach((broker, strings) -> System.out
+                        .println("Broker: " + broker.config.getPort() + " tags: " + strings));
 
                 ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
                 this.setBrokers(brokerList);
@@ -99,7 +101,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
-                if (numVideos == 0) System.out.println(TAG + "No videos available right now. Try again later!");
+                if (numVideos == 0)
+                    System.out.println(TAG + "No videos available right now. Try again later!");
 
                 for (int video = 0; video < numVideos; video++) {
                     // Construct the video
@@ -142,7 +145,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             } else if (exitCode == -1) {
                 System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {
-                System.out.println(TAG + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
+                System.out.println(TAG
+                        + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -161,7 +165,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         String videoName = video.get(0).videoFile.videoName.split("_")[0];
 
         try {
-            File file = new File(System.getProperty("user.dir") + "/out/" + videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
+            File file = new File(System.getProperty("user.dir") + "/out/" + videoName
+                    + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
             FileOutputStream fos = new FileOutputStream(file);
             for (Value v : video) {
                 fos.write(v.videoFile.videoFileChunk);
@@ -232,13 +237,12 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Finds the Broker that is responsible
-     * for the topic or a random one.
+     * Finds the Broker that is responsible for the topic or a random one.
      *
      * @param topic ChannelName or Hashtag to search for
      * @return selected Broker
      */
-    private Broker findBroker(String topic) {
+    public Broker findBroker(String topic) {
         Broker selected = null;
 
         synchronized (this) {
@@ -305,7 +309,6 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 }
             }
         }).start();
-
 
         try {
             ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
