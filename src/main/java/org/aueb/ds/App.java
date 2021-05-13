@@ -99,7 +99,7 @@ public class App {
                             // subscribedItems.remove(topic);
                             // }
                         } else if (ans == 3) {
-                            System.out.println(publisher.TAG + "Please enter a topic to unsubscribe: ");
+                            System.out.println(publisher.TAG + "Please enter the name of the video you want to upload: ");
                             String fileName = scanner.next();
                             File cwd = new File(System.getProperty("user.dir"));
                             for (File file : cwd.listFiles()) {
@@ -107,7 +107,7 @@ public class App {
                                     publisher.addVideo(file.getName());
                             }
                         } else if (ans == 4) {
-                            System.out.println(publisher.TAG + "Please enter a topic to unsubscribe: ");
+                            System.out.println(publisher.TAG + "Please enter the name of video you want to remove: ");
                             String filename = scanner.next();
                             publisher.removeVideo(filename);
                         } else {
