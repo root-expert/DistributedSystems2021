@@ -77,8 +77,9 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      *
      * @param broker The broker to subscribe.
      * @param topic  The topic to be subscribed on.
+     * @return true if the subscription was successful else false
      */
-    public void subscribe(Broker broker, String topic) {
+    public boolean subscribe(Broker broker, String topic) {
         Connection connection = null;
 
         try {
@@ -92,33 +93,20 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             if (exitCode == 1) {
                 System.out.println(TAG + "The topic does not exist. Redirecting to correct broker.");
 
-                subscribe((Broker) connection.in.readObject(), topic);
+                return subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
-                System.out.println(TAG + "The topic does not exist. Please pick a different one!");
-            } else if (exitCode == -2) {
-                System.out.println(TAG + "Subscription successful. There are no videos currently to receive!");
+                return false;
             } else {
-                System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
-                // Receive the number of videos to be viewed
-                int numVideos = connection.in.readInt();
-                if (numVideos == 0)
-                    System.out.println(TAG + "No videos available right now. Try again later!");
-
-                for (int video = 0; video < numVideos; video++) {
-                    // Construct the video
-                    ArrayList<Value> fullVideo = new ArrayList<>();
-                    int numChunks = connection.in.readInt();
-                    for (int bin = 0; bin < numChunks; bin++) {
-                        fullVideo.add((Value) connection.in.readObject());
-                    }
-                    // And store it locally
-                    playData(fullVideo);
-                }
+                System.out.println(TAG + "Subscription successful!");
+                subscribedItems.add(topic);
+                return true;
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         } catch (ClassNotFoundException cf) {
             System.out.println("Error: invalid cast :" + cf.getMessage());
+            return false;
         } finally {
             super.disconnect(connection);
         }
@@ -131,6 +119,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      * @param topic  The topic to unsubscribe from.
      */
     public void unsubscribe(Broker broker, String topic) {
+        if (!subscribedItems.contains(topic)) {
+            System.out.println(TAG + "You are not subscribed to " + topic);
+            return;
+        }
+
         Connection connection = null;
 
         try {
@@ -142,6 +135,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             int exitCode = connection.in.readInt();
             if (exitCode == 0) {
                 System.out.println(TAG + "Successful unsubscription from topic.");
+                subscribedItems.remove(topic);
             } else if (exitCode == -1) {
                 System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {

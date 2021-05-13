@@ -451,31 +451,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             broker.notifyPublisher(topic);
 
                             synchronized (broker) {
-                                if (!broker.videoList.get(topic).isEmpty()) {
-                                    out.writeInt(0);
-                                    out.flush();
-                                    // Create a Set with the videos to be sent the consumer, where
-                                    // the consumer's own videos are excluded
-                                    HashSet<ArrayList<Value>> toSend = broker
-                                            .filterConsumers(broker.videoList.get(topic), subscriber.channelName);
+                                HashSet<ArrayList<Value>> toSend = broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
+                                out.writeInt(0);
+                                out.flush();
 
-                                    // Send the amount of videos to be sent
-                                    int numVideos = toSend.size();
-                                    out.writeInt(numVideos);
-                                    out.flush();
-                                    for (ArrayList<Value> video : toSend) {
-                                        // Send the amount chunks each video has
-                                        out.writeInt(video.size());
-                                        out.flush();
-                                        for (Value chunk : video) {
-                                            out.writeObject(chunk);
-                                            out.flush();
-                                        }
-                                    }
-                                } else {
-                                    out.write(-2);
-                                    out.flush();
-                                }
+                                broker.pushToConsumer(subscriber, toSend);
                             }
                         } else {
                             boolean found = false;
