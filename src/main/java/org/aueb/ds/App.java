@@ -113,6 +113,10 @@ public class App {
                                     publisher.addVideo(file.getName());
                             }
                         } else if (ans == 4) {
+                            System.out.println("You can remove these videos");
+                            for(String name:publisher.getChannelName().userVideoFilesMap.keySet()){
+                                System.out.println("*"+name);
+                            }
                             System.out.println(Publisher.TAG + "Please enter the name of video you want to remove: ");
                             String filename = scanner.next();
                             publisher.removeVideo(filename);
