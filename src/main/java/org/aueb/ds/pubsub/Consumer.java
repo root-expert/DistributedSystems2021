@@ -264,52 +264,6 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     @Override
     public void run() {
         init();
-
-        new Thread(() -> {
-            while (true) {
-                System.out.println("[1] Subscribe");
-                System.out.println("[2] Unsubscribe");
-                System.out.println("[3] Exit");
-
-                Scanner scanner = new Scanner(System.in);
-                int ans;
-                do {
-                    System.out.print("Choose a number for your action: ");
-                    ans = scanner.nextInt();
-                } while (ans != 1 && ans != 2 && ans != 3);
-
-                if (ans == 1) {
-                    System.out.println(TAG + "Please enter a topic to subscribe: ");
-                    String topic = scanner.next();
-
-                    if (subscribedItems.contains(topic)) {
-                        System.out.println("You are already subscribed to " + topic);
-                    } else {
-                        subscribe(findBroker(topic), topic);
-                        subscribedItems.add(topic);
-                    }
-                } else if (ans == 2) {
-                    System.out.println(TAG + "Please enter a topic to unsubscribe: ");
-                    String topic = scanner.next();
-
-                    if (!subscribedItems.contains(topic)) {
-                        System.out.println("You are not subscribed to " + topic);
-                    } else {
-                        unsubscribe(findBroker(topic), topic);
-                        subscribedItems.remove(topic);
-                    }
-                } else {
-                    System.out.println("Exiting..");
-                    break;
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
         try {
             ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
 

@@ -64,7 +64,13 @@ public class App {
 
                 // Menu to
                 new Thread(() -> {
+                    try {
+                        Thread.sleep(2500);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     while (true) {
+                        System.out.println();
                         System.out.println("[1] Subscribe");
                         System.out.println("[2] Unsubscribe");
                         System.out.println("[3] Upload Video");
