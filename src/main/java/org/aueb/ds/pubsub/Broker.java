@@ -34,10 +34,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      */
     private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
 
-    // userHashtags: a hashmap that holds the set of Consumer objects that are associated with this topic.
+    // userHashtags: a hashmap that holds the set of Consumer objects that are
+    // associated with this topic.
     private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
 
-    // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker is associated with.
+    // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker
+    // is associated with.
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
 
@@ -56,6 +58,26 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         this.hash = new Hashing().md5Hash(config.getIp() + config.getPort());
 
         brokerAssociatedHashtags.put(this, new HashSet<>());
+    }
+
+    /**
+     * 
+     * @param videos  the list of videos(chunked) to be sent to the Consumer
+     * @param channel the channel name of the consumer we have to send videos to
+     * @return the set of videos that can be sent to the consumer without
+     *         overlappinng with videos the consumer already has
+     */
+    private HashSet<ArrayList<Value>> filterConsumers(ArrayList<ArrayList<Value>> videos, String channel) {
+        HashSet<ArrayList<Value>> toSend = new HashSet<>();
+        // for each video in the requested
+        for (ArrayList<Value> video : videos) {
+            // if the video's channel of origin does not match the consumer's channel mark
+            // it to be sent
+            if (!video.get(0).videoFile.channelName.equals(channel)) {
+                toSend.add(video);
+            }
+        }
+        return toSend;
     }
 
     public synchronized void notifyPublisher(String topic) {
@@ -317,9 +339,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         String cn = in.readUTF();
 
                         synchronized (broker) {
-                            broker.registeredPublishers
-                                    .stream().filter(it -> it.getChannelName().channelName.equals(cn))
-                                    .findFirst()
+                            broker.registeredPublishers.stream()
+                                    .filter(it -> it.getChannelName().channelName.equals(cn)).findFirst()
                                     .ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
                         }
                     } else if (action.equals("getBrokerInfo")) {
@@ -338,8 +359,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
                             // Update the hashtags of the specified publisher
                             broker.publisherHashtags.keySet().stream()
-                                    .filter(it -> it.getChannelName().channelName.equals(channelName))
-                                    .findFirst()
+                                    .filter(it -> it.getChannelName().channelName.equals(channelName)).findFirst()
                                     .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
 
                             broker.videoList.put(topic, new ArrayList<>());
@@ -353,13 +373,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         String channelName = in.readUTF();
 
                         synchronized (broker) {
-                            long count = broker.publisherHashtags.values().stream()
-                                    .filter(it -> it.contains(topic))
+                            long count = broker.publisherHashtags.values().stream().filter(it -> it.contains(topic))
                                     .count();
 
                             broker.publisherHashtags.keySet().stream()
-                                    .filter(it -> it.getChannelName().channelName.equals(channelName))
-                                    .findFirst()
+                                    .filter(it -> it.getChannelName().channelName.equals(channelName)).findFirst()
                                     .ifPresent(publisher -> broker.publisherHashtags.get(publisher).remove(topic));
 
                             if (count == 1) {
@@ -377,9 +395,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // If the broker is associated with this topic
                         // and therefore provide videos for it
                         if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
-                            /* If there are no consumers subscribed to this topic
-                             * initialize the repository of consumers that will be
-                             * informed with the video
+                            /*
+                             * If there are no consumers subscribed to this topic initialize the repository
+                             * of consumers that will be informed with the video
                              */
                             synchronized (broker) {
                                 if (!broker.userHashtags.containsKey(topic)) {
@@ -401,11 +419,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     out.flush();
                                     // Create a Set with the videos to be sent the consumer, where
                                     // the consumer's own videos are excluded
-                                    HashSet<ArrayList<Value>> toSend = new HashSet<>();
-                                    for (ArrayList<Value> video : broker.videoList.get(topic)) {
-                                        if (!video.get(0).videoFile.channelName.equals(subscriber.channelName))
-                                            toSend.add(video);
-                                    }
+                                    HashSet<ArrayList<Value>> toSend = broker
+                                            .filterConsumers(broker.videoList.get(topic), subscriber.channelName);
+
                                     // Send the amount of videos to be sent
                                     int numVideos = toSend.size();
                                     out.writeInt(numVideos);
@@ -513,7 +529,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
             } catch (ClassNotFoundException cf) {
                 System.out.println(TAG + "Error: invalid cast" + cf.getMessage());
             } catch (NullPointerException nu) {
-                System.out.println(TAG + "Error: Inappropriate connection object, connection failed " + nu.getMessage());
+                System.out
+                        .println(TAG + "Error: Inappropriate connection object, connection failed " + nu.getMessage());
                 nu.printStackTrace();
             } catch (IOException io) {
                 System.out.println(TAG + "Error: problem in input/output " + io.getMessage());
