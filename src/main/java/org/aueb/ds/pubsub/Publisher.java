@@ -11,11 +11,7 @@ import org.aueb.ds.util.MetadataExtract;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -365,10 +361,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 System.out.println("[2]: Remove video");
                 System.out.println("[3]: Exit");
                 Scanner scanner = new Scanner(System.in);
-                int answer = -1;
+                int answer;
                 do {
                     answer = scanner.nextInt();
-                } while (answer >= 1 && answer <= 3);
+                } while (answer < 1 || answer > 3);
                 switch (answer) {
                     case 1:
                         // The name of the video to be uploaded
