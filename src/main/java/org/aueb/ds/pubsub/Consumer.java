@@ -15,6 +15,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
     protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
+    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics (channelName/Hashtags)
     private static final String TAG = "[Consumer] ";
 
     protected AppNodeConfig config;
@@ -230,34 +231,73 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         return Objects.hash(hashtagInfo);
     }
 
+    /**
+     * Finds the Broker that is responsible
+     * for the topic or a random one.
+     *
+     * @param topic ChannelName or Hashtag to search for
+     * @return selected Broker
+     */
+    private Broker findBroker(String topic) {
+        Broker selected = null;
+
+        synchronized (this) {
+            for (Broker broker : hashtagInfo.keySet()) {
+                if (hashtagInfo.get(broker).contains(topic)) {
+                    selected = broker;
+                }
+            }
+
+            if (selected == null) {
+                System.out.println(TAG + "Couldn't find broker. Picking a random one");
+                int randomIdx = new Random().nextInt(hashtagInfo.size());
+                selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+            }
+        }
+        return selected;
+    }
+
     @Override
     public void run() {
         init();
 
         new Thread(() -> {
             while (true) {
-                System.out.println(TAG + "Please enter a topic to subscribe: ");
+                System.out.println("[1] Subscribe");
+                System.out.println("[2] Unsubscribe");
+                System.out.println("[3] Exit");
+
                 Scanner scanner = new Scanner(System.in);
+                int ans;
+                do {
+                    System.out.print("Choose a number for your action: ");
+                    ans = scanner.nextInt();
+                } while (ans != 1 && ans != 2 && ans != 3);
 
-                String topic = scanner.next();
+                if (ans == 1) {
+                    System.out.println(TAG + "Please enter a topic to subscribe: ");
+                    String topic = scanner.next();
 
-                Broker selected = null;
-
-                synchronized (this) {
-                    for (Broker broker : hashtagInfo.keySet()) {
-                        if (hashtagInfo.get(broker).contains(topic)) {
-                            selected = broker;
-                        }
+                    if (subscribedItems.contains(topic)) {
+                        System.out.println("You are already subscribed to " + topic);
+                    } else {
+                        subscribe(findBroker(topic), topic);
+                        subscribedItems.add(topic);
                     }
+                } else if (ans == 2) {
+                    System.out.println(TAG + "Please enter a topic to unsubscribe: ");
+                    String topic = scanner.next();
 
-                    if (selected == null) {
-                        System.out.println(TAG + "Couldn't find broker. Picking a random one");
-                        int randomIdx = new Random().nextInt(hashtagInfo.size());
-                        selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+                    if (!subscribedItems.contains(topic)) {
+                        System.out.println("You are not subscribed to " + topic);
+                    } else {
+                        unsubscribe(findBroker(topic), topic);
+                        subscribedItems.remove(topic);
                     }
+                } else {
+                    System.out.println("Exiting..");
+                    break;
                 }
-                subscribe(selected, topic);
-
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
