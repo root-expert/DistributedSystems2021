@@ -85,7 +85,7 @@ public class App {
                         } while (ans<1||ans>5);
 
                         if (ans == 1) {
-                            System.out.print(consumer.TAG + "Please enter a topic to subscribe: ");
+                            System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
                             String topic = scanner.next();
                             consumer.subscribe(consumer.findBroker(topic), topic);
                             // if (consumer.subscribedItems.contains(topic)) {
@@ -95,7 +95,7 @@ public class App {
                             // subscribedItems.add(topic);
                             // }
                         } else if (ans == 2) {
-                            System.out.println(consumer.TAG + "Please enter a topic to unsubscribe: ");
+                            System.out.println(Consumer.TAG + "Please enter a topic to unsubscribe: ");
                             String topic = scanner.next();
                             consumer.unsubscribe(consumer.findBroker(topic), topic);
                             // if (!subscribedItems.contains(topic)) {
@@ -105,7 +105,7 @@ public class App {
                             // subscribedItems.remove(topic);
                             // }
                         } else if (ans == 3) {
-                            System.out.println(publisher.TAG + "Please enter the name of the video you want to upload: ");
+                            System.out.println(Publisher.TAG + "Please enter the name of the video you want to upload: ");
                             String fileName = scanner.next();
                             File cwd = new File(System.getProperty("user.dir"));
                             for (File file : cwd.listFiles()) {
@@ -113,13 +113,14 @@ public class App {
                                     publisher.addVideo(file.getName());
                             }
                         } else if (ans == 4) {
-                            System.out.println(publisher.TAG + "Please enter the name of video you want to remove: ");
+                            System.out.println(Publisher.TAG + "Please enter the name of video you want to remove: ");
                             String filename = scanner.next();
                             publisher.removeVideo(filename);
                         } else {
                             System.out.println("Exiting..");
                             break;
                         }
+                        scanner.close();
                     }
                 }).start();
                 try {
