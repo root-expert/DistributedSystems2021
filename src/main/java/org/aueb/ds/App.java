@@ -82,7 +82,7 @@ public class App {
                         do {
                             System.out.print("Choose a number for your action: ");
                             ans = scanner.nextInt();
-                        } while (ans != 1 && ans != 2 && ans != 3);
+                        } while (ans<1||ans>5);
 
                         if (ans == 1) {
                             System.out.print(consumer.TAG + "Please enter a topic to subscribe: ");
