@@ -1,6 +1,6 @@
-# Distributed Systems First Distibutable
+# Κατανεμημένα Συστήματα Πρώτο Παραδοτέο
 
-### Requirements:
+### Απαιτήσεις:
 1. Gradle 7.0.0
 2. Java  SE 8
 ### Arguments:
