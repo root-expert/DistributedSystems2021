@@ -18,12 +18,11 @@ import java.util.Objects;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
-    private static final long serialVersionUID = -6645374596536043061L;
+    public static final String TAG = "[Publisher] ";
+    protected AppNodeConfig config;
 
     private ChannelName channelName;
-    public static final String TAG = "[Publisher] ";
-
-    protected AppNodeConfig config;
+    private static final long serialVersionUID = -6645374596536043061L;
 
     public Publisher() {
 

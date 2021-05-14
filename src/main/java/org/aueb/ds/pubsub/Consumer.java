@@ -11,15 +11,15 @@ import java.util.*;
 
 public class Consumer extends AppNode implements Runnable, Serializable {
 
-    private static final long serialVersionUID = -8644673594536043061L;
-
-    protected String channelName;
-    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
-    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics
-                                                                   // (channelName/Hashtags)
     public static final String TAG = "[Consumer] ";
 
     protected AppNodeConfig config;
+    protected String channelName;
+
+    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
+    // Contains Consumer's subscribed topics
+    private ArrayList<String> subscribedItems = new ArrayList<>();
+    private static final long serialVersionUID = -8644673594536043061L;
 
     public Consumer() {
     }
@@ -34,11 +34,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      */
     @Override
     public void init() {
+        channelName = config.getChannelName();
 
         // Make directory to save files
         new File(System.getProperty("user.dir") + "/out/").mkdirs();
 
-        channelName = config.getChannelName();
         Connection connection = null;
         boolean connected = false;
 
@@ -82,6 +82,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     public boolean subscribe(Broker broker, String topic) {
         Connection connection = null;
 
+        if (subscribedItems.contains(topic)) {
+            System.out.println(TAG + "You are already subscribed to " + topic);
+            return false;
+        }
+
         try {
             connection = connect(broker.config.getIp(), broker.config.getPort());
             connection.out.writeUTF("subscribe");
@@ -95,6 +100,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
                 return subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
+                System.out.println(TAG + "The specified topic does not exist.");
                 return false;
             } else {
                 System.out.println(TAG + "Subscription successful!");
@@ -227,7 +233,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hashtagInfo);
+        return Objects.hash(channelName);
     }
 
     /**
@@ -298,6 +304,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                             consumer.hashtagInfo.put(broker, hashtags);
                         }
                     } else if (action.equals("newVideos")) {
+                        System.out.println();
                         System.out.println(TAG + "Receiving new videos...");
                         int numOfVideos = in.readInt();
 
