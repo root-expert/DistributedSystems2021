@@ -235,11 +235,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     private void updatePendingConsumers(String topic) {
         HashSet<Consumer> consumers = this.userHashtags.get(topic);
-        notifyPublisher(topic);
-
-        ArrayList<ArrayList<Value>> availableVideos = videoList.get(topic);
 
         if (consumers == null) return;
+        if (consumers.isEmpty()) return;
+
+        notifyPublisher(topic);
+        ArrayList<ArrayList<Value>> availableVideos = videoList.get(topic);
 
         consumers.forEach(consumer -> {
             HashSet<ArrayList<Value>> toSend = this.filterConsumers(availableVideos, consumer.channelName);
