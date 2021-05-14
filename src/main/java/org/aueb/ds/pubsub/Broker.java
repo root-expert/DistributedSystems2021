@@ -250,6 +250,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 e.printStackTrace();
             }
         });
+
+        // Clear the videos
+        videoList.remove(topic);
+        videoList.put(topic, new ArrayList<>());
     }
 
     private void pushToConsumer(Consumer consumer, HashSet<ArrayList<Value>> toSend) throws IOException {
@@ -460,9 +464,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
                                 ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
 
-                                if (videos != null)
-                                    broker.videoList.get(topic).clear();
-
+                                // Fetch videos
                                 broker.notifyPublisher(topic);
 
                                 HashSet<ArrayList<Value>> toSend = broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
