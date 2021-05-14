@@ -62,7 +62,7 @@ public class App {
                 }
                 pubThread.start();
 
-                // Menu to
+                // Menu
                 new Thread(() -> {
                     try {
                         Thread.sleep(2500);
@@ -82,30 +82,18 @@ public class App {
                         do {
                             System.out.print("Choose a number for your action: ");
                             ans = scanner.nextInt();
-                        } while (ans<1||ans>5);
+                        } while (ans < 1 || ans > 5);
 
                         if (ans == 1) {
                             System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
                             String topic = scanner.next();
                             consumer.subscribe(consumer.findBroker(topic), topic);
-                            // if (consumer.subscribedItems.contains(topic)) {
-                            // System.out.println("You are already subscribed to " + topic);
-                            // } else {
-                            // consumer.subscribe(consumer.findBroker(topic), topic);
-                            // subscribedItems.add(topic);
-                            // }
                         } else if (ans == 2) {
-                            System.out.println(Consumer.TAG + "Please enter a topic to unsubscribe: ");
+                            System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
                             String topic = scanner.next();
                             consumer.unsubscribe(consumer.findBroker(topic), topic);
-                            // if (!subscribedItems.contains(topic)) {
-                            // System.out.println("You are not subscribed to " + topic);
-                            // } else {
-                            // consumer.unsubscribe(consumer.findBroker(topic), topic);
-                            // subscribedItems.remove(topic);
-                            // }
                         } else if (ans == 3) {
-                            System.out.println(Publisher.TAG + "Please enter the name of the video you want to upload: ");
+                            System.out.print(Publisher.TAG + "Please enter the name of the video you want to upload: ");
                             String fileName = scanner.next();
                             File cwd = new File(System.getProperty("user.dir"));
                             for (File file : cwd.listFiles()) {
@@ -113,11 +101,12 @@ public class App {
                                     publisher.addVideo(file.getName());
                             }
                         } else if (ans == 4) {
-                            System.out.println("You can remove these videos");
-                            for(String name:publisher.getChannelName().userVideoFilesMap.keySet()){
-                                System.out.println("*"+name);
+                            System.out.println("\nYou can remove these videos");
+                            for (String name : publisher.getChannelName().userVideoFilesMap.keySet()) {
+                                System.out.println("* " + name);
                             }
-                            System.out.println(Publisher.TAG + "Please enter the name of video you want to remove: ");
+
+                            System.out.print(Publisher.TAG + "Please enter the name of video you want to remove: ");
                             String filename = scanner.next();
                             publisher.removeVideo(filename);
                         } else {
@@ -127,6 +116,7 @@ public class App {
                         scanner.close();
                     }
                 }).start();
+
                 try {
                     pubThread.join();
                     consThread.join();
