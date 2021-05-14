@@ -15,8 +15,9 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
     protected String channelName;
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
-    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics (channelName/Hashtags)
-    private static final String TAG = "[Consumer] ";
+    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics
+                                                                   // (channelName/Hashtags)
+    public static final String TAG = "[Consumer] ";
 
     protected AppNodeConfig config;
 
@@ -53,7 +54,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 hashtagInfo.putAll((HashMap<Broker, HashSet<String>>) connection.in.readObject());
                 System.out.println(TAG + "Received broker's list.");
 
-                hashtagInfo.forEach((broker, strings) -> System.out.println("Broker: " + broker.config.getPort() + " tags: " + strings));
+                hashtagInfo.forEach((broker, strings) -> System.out
+                        .println("Broker: " + broker.config.getPort() + " tags: " + strings));
 
                 ArrayList<Broker> brokerList = new ArrayList<>(hashtagInfo.keySet());
                 this.setBrokers(brokerList);
@@ -99,7 +101,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
                 // Receive the number of videos to be viewed
                 int numVideos = connection.in.readInt();
-                if (numVideos == 0) System.out.println(TAG + "No videos available right now. Try again later!");
+                if (numVideos == 0)
+                    System.out.println(TAG + "No videos available right now. Try again later!");
 
                 for (int video = 0; video < numVideos; video++) {
                     // Construct the video
@@ -142,7 +145,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             } else if (exitCode == -1) {
                 System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {
-                System.out.println(TAG + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
+                System.out.println(TAG
+                        + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -161,7 +165,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         String videoName = video.get(0).videoFile.videoName.split("_")[0];
 
         try {
-            File file = new File(System.getProperty("user.dir") + "/out/" + videoName + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
+            File file = new File(System.getProperty("user.dir") + "/out/" + videoName
+                    + String.join("", video.get(0).videoFile.associatedHashtags) + ".mp4");
             FileOutputStream fos = new FileOutputStream(file);
             for (Value v : video) {
                 fos.write(v.videoFile.videoFileChunk);
@@ -232,13 +237,12 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Finds the Broker that is responsible
-     * for the topic or a random one.
+     * Finds the Broker that is responsible for the topic or a random one.
      *
      * @param topic ChannelName or Hashtag to search for
      * @return selected Broker
      */
-    private Broker findBroker(String topic) {
+    public Broker findBroker(String topic) {
         Broker selected = null;
 
         synchronized (this) {
@@ -260,53 +264,6 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     @Override
     public void run() {
         init();
-
-        new Thread(() -> {
-            while (true) {
-                System.out.println("[1] Subscribe");
-                System.out.println("[2] Unsubscribe");
-                System.out.println("[3] Exit");
-
-                Scanner scanner = new Scanner(System.in);
-                int ans;
-                do {
-                    System.out.print("Choose a number for your action: ");
-                    ans = scanner.nextInt();
-                } while (ans != 1 && ans != 2 && ans != 3);
-
-                if (ans == 1) {
-                    System.out.println(TAG + "Please enter a topic to subscribe: ");
-                    String topic = scanner.next();
-
-                    if (subscribedItems.contains(topic)) {
-                        System.out.println("You are already subscribed to " + topic);
-                    } else {
-                        subscribe(findBroker(topic), topic);
-                        subscribedItems.add(topic);
-                    }
-                } else if (ans == 2) {
-                    System.out.println(TAG + "Please enter a topic to unsubscribe: ");
-                    String topic = scanner.next();
-
-                    if (!subscribedItems.contains(topic)) {
-                        System.out.println("You are not subscribed to " + topic);
-                    } else {
-                        unsubscribe(findBroker(topic), topic);
-                        subscribedItems.remove(topic);
-                    }
-                } else {
-                    System.out.println("Exiting..");
-                    break;
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
-
         try {
             ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
 

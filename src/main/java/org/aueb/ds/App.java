@@ -7,7 +7,9 @@ import org.aueb.ds.pubsub.Consumer;
 import org.aueb.ds.pubsub.Publisher;
 import org.aueb.ds.util.ConfigParser;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class App {
 
@@ -59,6 +61,61 @@ public class App {
                     e.printStackTrace();
                 }
                 pubThread.start();
+
+                // Menu
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(2500);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    while (true) {
+                        System.out.println();
+                        System.out.println("[1] Subscribe");
+                        System.out.println("[2] Unsubscribe");
+                        System.out.println("[3] Upload Video");
+                        System.out.println("[4] Remove Video");
+                        System.out.println("[5] Exit");
+
+                        Scanner scanner = new Scanner(System.in);
+                        int ans;
+                        do {
+                            System.out.print("Choose a number for your action: ");
+                            ans = scanner.nextInt();
+                        } while (ans < 1 || ans > 5);
+
+                        if (ans == 1) {
+                            System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
+                            String topic = scanner.next();
+                            consumer.subscribe(consumer.findBroker(topic), topic);
+                        } else if (ans == 2) {
+                            System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
+                            String topic = scanner.next();
+                            consumer.unsubscribe(consumer.findBroker(topic), topic);
+                        } else if (ans == 3) {
+                            System.out.print(Publisher.TAG + "Please enter the name of the video you want to upload: ");
+                            String fileName = scanner.next();
+                            File cwd = new File(System.getProperty("user.dir"));
+                            for (File file : cwd.listFiles()) {
+                                if (file.getName().contains(".mp4") && file.getName().contains(fileName))
+                                    publisher.addVideo(file.getName());
+                            }
+                        } else if (ans == 4) {
+                            System.out.println("\nYou can remove these videos");
+                            for (String name : publisher.getChannelName().userVideoFilesMap.keySet()) {
+                                System.out.println("* " + name);
+                            }
+
+                            System.out.print(Publisher.TAG + "Please enter the name of video you want to remove: ");
+                            String filename = scanner.next();
+                            publisher.removeVideo(filename);
+                        } else {
+                            System.out.println("Exiting..");
+                            break;
+                        }
+                        scanner.close();
+                    }
+                }).start();
 
                 try {
                     pubThread.join();

@@ -18,7 +18,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     private static final long serialVersionUID = -6645374596536043061L;
 
     private ChannelName channelName;
-    private static final String TAG = "[Publisher] ";
+    public static final String TAG = "[Publisher] ";
 
     protected AppNodeConfig config;
 
@@ -69,7 +69,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     public void addVideo(String fileName) {
         ArrayList<Value> videos = generateChunks(fileName);
-        String actualName=fileName.replace(".mp4", "").split("#")[0];
+        String actualName = fileName.replace(".mp4", "").split("#")[0];
         if (!channelName.userVideoFilesMap.containsKey(actualName)) {
             channelName.userVideoFilesMap.put(actualName, videos);
             for (String hash : videos.get(0).videoFile.associatedHashtags) {
@@ -81,7 +81,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     /**
      * Removes a video from the the Publisher
      * 
-     * @param filename the video file name to be removed(either the video name or the .mp4 file name)
+     * @param filename the video file name to be removed(either the video name or
+     *                 the .mp4 file name)
      */
     public void removeVideo(String filename) {
         String actualName = filename.replace(".mp4", "").split("#")[0];
@@ -97,7 +98,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         File cwd = new File(System.getProperty("user.dir"));
         for (File video : cwd.listFiles()) {
             if (video.getName().contains(".mp4")
-                    || video.getName().replace(".mp4", "").split("#")[0].equals(actualName)) {
+                    && video.getName().replace(".mp4", "").split("#")[0].equals(actualName)) {
                 video.renameTo(new File(video.getName().replace(".mp4", ".removed")));
                 return;
             }
@@ -498,7 +499,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                                 synchronized (publisher) {
                                     if (!cn.userVideoFilesMap.isEmpty()) {
                                         exitCode = 0;
-                                    } 
+                                    }
                                 }
                             }
                         }
