@@ -11,7 +11,10 @@ import org.aueb.ds.util.MetadataExtract;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
@@ -32,6 +35,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void init() {
+        // Initialize the channel name object
+        channelName = new ChannelName(config.getChannelName());
+
         boolean brokersAvailable = false;
 
         while (!brokersAvailable) {
@@ -46,9 +52,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 brokersAvailable = true;
             }
         }
-
-        // Initialize the channel name object
-        channelName = new ChannelName(config.getChannelName());
 
         // Find all the videos on the Publisher's folder
         File cwd = new File(System.getProperty("user.dir"));
@@ -391,7 +394,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void run() {
-        init();
+        new Thread(this::init).start();
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
             while (true) {

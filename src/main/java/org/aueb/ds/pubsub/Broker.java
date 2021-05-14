@@ -80,7 +80,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         return toSend;
     }
 
-    public synchronized void notifyPublisher(String topic) {
+    public void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
         Connection connection;
         /*
@@ -235,10 +235,13 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
     private void updatePendingConsumers(String topic) {
         HashSet<Consumer> consumers = this.userHashtags.get(topic);
+        notifyPublisher(topic);
+
         ArrayList<ArrayList<Value>> availableVideos = videoList.get(topic);
 
-        consumers.forEach(consumer ->
-        {
+        if (consumers == null) return;
+
+        consumers.forEach(consumer -> {
             HashSet<ArrayList<Value>> toSend = this.filterConsumers(availableVideos, consumer.channelName);
             try {
                 pushToConsumer(consumer, toSend);
@@ -265,6 +268,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         }
 
         connection.out.flush();
+        disconnect(connection);
     }
 
     @Override
@@ -402,6 +406,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             // Update consumer's broker list
                             broker.updateNodes();
 
+                            // Send videos to subsribed consumer
                             broker.updatePendingConsumers(topic);
                         }
                     } else if (action.equals("RemoveHashTag")) {
@@ -442,15 +447,23 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                 }
                                 // Add the Consumer to the repository and reconstruct the list
                                 // of the videos to be sent to them
-                                broker.userHashtags.get(topic).add(subscriber);
+                                HashSet<Consumer> consumers = broker.userHashtags.get(topic);
+
+                                if (consumers == null) {
+                                    consumers = new HashSet<>();
+                                    consumers.add(subscriber);
+                                    broker.userHashtags.put(topic, consumers);
+                                } else {
+                                    consumers.add(subscriber);
+                                }
+
                                 ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
 
                                 if (videos != null)
                                     broker.videoList.get(topic).clear();
-                            }
-                            broker.notifyPublisher(topic);
 
-                            synchronized (broker) {
+                                broker.notifyPublisher(topic);
+
                                 HashSet<ArrayList<Value>> toSend = broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
                                 out.writeInt(0);
                                 out.flush();

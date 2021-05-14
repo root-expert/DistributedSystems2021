@@ -321,6 +321,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 socket.close();
             } catch (IOException io) {
                 System.out.println("Error: problem in input/output" + io.getMessage());
+                io.printStackTrace();
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }
