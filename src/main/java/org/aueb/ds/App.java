@@ -89,9 +89,26 @@ public class App {
                             } while (ans < 1 || ans > 5);
 
                             if (ans == 1) {
-                                System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
-                                String topic = in.readLine();
-                                consumer.subscribe(consumer.findBroker(topic), topic);
+                                boolean subscribed = false;
+
+                                while (!subscribed) {
+                                    System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
+                                    String topic = in.readLine();
+                                    subscribed = consumer.subscribe(consumer.findBroker(topic), topic);
+
+                                    if (!subscribed) {
+                                        System.out.print("The specified topic does not exist. Do you want to pick a different one? (y/n): ");
+                                        String answer = in.readLine();
+
+                                        while (!answer.equals("y") && !answer.equals("n")) {
+                                            System.out.print("Please enter y or n: ");
+                                            answer = in.readLine();
+                                        }
+
+                                        if (answer.equals("n"))
+                                            break;
+                                    }
+                                }
                             } else if (ans == 2) {
                                 System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
                                 String topic = in.readLine();
