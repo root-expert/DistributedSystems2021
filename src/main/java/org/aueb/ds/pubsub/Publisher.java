@@ -115,9 +115,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param topic HashTag or channelName added.
      */
     private synchronized void addHashTag(String topic) {
-        channelName.hashtagsPublished.add(topic);
+        boolean added = channelName.hashtagsPublished.add(topic);
         notifyBrokersForHashTags(topic, true);
-        System.out.println(TAG + "Topic added: " + topic);
+
+        if (added) System.out.println(TAG + "Topic added: " + topic);
     }
 
     /**
