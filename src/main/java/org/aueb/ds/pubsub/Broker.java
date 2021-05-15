@@ -349,7 +349,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
         // Shutdown all threads gracefully
         Thread.getAllStackTraces().keySet().stream()
-                .filter(thread -> !thread.getName().equals("broker-thread"))
+                .filter(thread -> !thread.getName().equals("Thread-"))
                 .forEach(thread -> {
                     if (thread.isAlive())
                         thread.interrupt();

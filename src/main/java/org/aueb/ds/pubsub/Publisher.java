@@ -379,7 +379,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         }
     }
 
-    public void cleanup() {
+    private void cleanup() {
         HashSet<Broker> registeredBrokers = new HashSet<>();
 
         synchronized (this) {
@@ -404,7 +404,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         this.acceptingConnections = false;
 
         Thread.getAllStackTraces().keySet().stream()
-                .filter(thread -> !thread.getName().equals("publisher-thread") && !thread.getName().equals("consumer-thread"))
+                .filter(thread -> thread.getName().startsWith("Thread-"))
                 .forEach(thread -> {
                     if (thread.isAlive())
                         thread.interrupt();

@@ -295,7 +295,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         this.acceptingConnections = false;
 
         Thread.getAllStackTraces().keySet().stream()
-                .filter(thread -> !thread.getName().equals("publisher-thread") && !thread.getName().equals("consumer-thread"))
+                .filter(thread -> thread.getName().startsWith("Thread-"))
                 .forEach(thread -> {
                     if (thread.isAlive())
                         thread.interrupt();
