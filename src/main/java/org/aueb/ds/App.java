@@ -93,7 +93,7 @@ public class App {
                                     System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
                                     String topic = in.readLine();
                                     if (topic.equals("")) {
-                                        System.out.println(
+                                        System.out.print(
                                                 "Are you sure you do not want to subscribe to a new topic? (y/n):");
                                         String answer = in.readLine();
                                         while (!answer.equals("y") && !answer.equals("n")) {
