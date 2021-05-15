@@ -285,6 +285,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     private void forceUnsubscribe(String topic) throws IOException {
         HashSet<Consumer> consumers = userHashtags.get(topic);
 
+        if (consumers == null) return;
+        if (consumers.isEmpty()) return;
+
         for (Consumer consumer : consumers) {
             Connection connection = connect(consumer.config.getIp(), consumer.config.getConsumerPort());
             connection.out.writeUTF("forceUnsubscribe");
@@ -518,6 +521,9 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             if (count <= 1) {
                                 broker.videoList.remove(topic);
                                 broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                                // Force unsubscribe consumer from topic
+                                broker.forceUnsubscribe(topic);
+                                broker.userHashtags.remove(topic);
                                 // Update rest of the brokers about this change
                                 broker.notifyBrokersOnChanges();
                                 // Update consumer's broker list

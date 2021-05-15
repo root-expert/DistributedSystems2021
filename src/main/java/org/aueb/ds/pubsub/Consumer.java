@@ -366,6 +366,14 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
                             consumer.playData(video);
                         }
+                    } else if (action.equals("forceUnsubscribe")) {
+                        String topic = in.readUTF();
+
+                        synchronized (consumer) {
+                            consumer.subscribedItems.remove(topic);
+                            System.out.println();
+                            System.out.println(TAG + "You were unsubscribed from " + topic + " as it is no longer available.");
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
