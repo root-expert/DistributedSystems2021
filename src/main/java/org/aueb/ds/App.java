@@ -53,6 +53,8 @@ public class App {
 
                 Thread pubThread = new Thread(publisher);
                 Thread consThread = new Thread(consumer);
+                pubThread.setName("publisher-thread");
+                consThread.setName("consumer-thread");
 
                 consThread.start();
 

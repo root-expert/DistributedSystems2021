@@ -403,10 +403,12 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         // Stop receiving new connections
         this.acceptingConnections = false;
 
-        Thread.getAllStackTraces().keySet().forEach(thread -> {
-            if (thread.isAlive())
-                thread.interrupt();
-        });
+        Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> !thread.getName().equals("publisher-thread") && !thread.getName().equals("consumer-thread"))
+                .forEach(thread -> {
+                    if (thread.isAlive())
+                        thread.interrupt();
+                });
     }
 
     @Override
@@ -428,10 +430,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void run() {
         new Thread(this::init).start();
 
+        // If the JVM is shutting down call cleanup()
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println();
             System.out.println(TAG + "Shutting down gracefully...");
-            // If the JVM is shutting down call cleanup()
             cleanup();
         }));
 
