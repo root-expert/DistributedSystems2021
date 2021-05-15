@@ -72,6 +72,10 @@ public class Consumer extends AppNode implements Runnable, Serializable {
         }
     }
 
+    public ArrayList<String> getSubscribedItems() {
+        return subscribedItems;
+    }
+
     /**
      * Subscribe the consumer to the specified topic.
      *
