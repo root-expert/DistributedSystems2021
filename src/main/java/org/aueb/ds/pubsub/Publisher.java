@@ -78,6 +78,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 addHashTag(hash);
             }
         }
+        addHashTag(channelName.channelName);
     }
 
     /**
