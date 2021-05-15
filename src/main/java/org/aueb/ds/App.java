@@ -92,22 +92,24 @@ public class App {
                                 while (!subscribed) {
                                     System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
                                     String topic = in.readLine();
-                                    if (topic.equals("")){
-                                        System.out.println("Are you sure you do not want to subscribe to a new topic? (y/n):");
+                                    if (topic.equals("")) {
+                                        System.out.println(
+                                                "Are you sure you do not want to subscribe to a new topic? (y/n):");
                                         String answer = in.readLine();
                                         while (!answer.equals("y") && !answer.equals("n")) {
                                             System.out.print("Please enter y or n: ");
                                             answer = in.readLine();
                                         }
                                         if (answer.equals("n"))
-                                        continue;
+                                            continue;
                                         break;
                                     }
                                     subscribed = consumer.subscribe(consumer.findBroker(topic), topic);
 
                                     if (!subscribed) {
-                                        System.out.print(Consumer.TAG + "We couldn't subscribe you to the specified topic. " +
-                                                "Do you want to pick a different one? (y/n): ");
+                                        System.out.print(
+                                                Consumer.TAG + "We couldn't subscribe you to the specified topic. "
+                                                        + "Do you want to pick a different one? (y/n): ");
                                         String answer = in.readLine();
 
                                         while (!answer.equals("y") && !answer.equals("n")) {
@@ -120,26 +122,28 @@ public class App {
                                     }
                                 }
                             } else if (ans == 2) {
-                                for(String topic :consumer.getSubscribedItems()){
-                                    System.out.println("*"+ topic);
+                                for (String topic : consumer.getSubscribedItems()) {
+                                    System.out.println("* " + topic);
                                 }
                                 System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
                                 String topic = in.readLine();
-                                if (topic.equals("")){
+                                if (topic.equals("")) {
                                     System.out.println("There was no input, canceling...");
                                     continue;
                                 }
                                 consumer.unsubscribe(consumer.findBroker(topic), topic);
                             } else if (ans == 3) {
-                                File cwd=new File(System.getProperty("user.dir"));
-                                for(File file: cwd.listFiles()){
-                                    String name=file.getName().replace(".mp4", "").split("#")[0];
-                                    if(file.getName().contains(".mp4")&& !publisher.getChannelName().userVideoFilesMap.containsKey(name))
-                                        System.out.println("* "+name);
+                                File cwd = new File(System.getProperty("user.dir"));
+                                for (File file : cwd.listFiles()) {
+                                    String name = file.getName().replace(".mp4", "").split("#")[0];
+                                    if (file.getName().contains(".mp4")
+                                            && !publisher.getChannelName().userVideoFilesMap.containsKey(name))
+                                        System.out.println("* " + name);
                                 }
-                                System.out.print(Publisher.TAG + "Please enter the name of the video you want to upload: ");
+                                System.out.print(
+                                        Publisher.TAG + "Please enter the name of the video you want to upload: ");
                                 String filename = in.readLine();
-                                if (filename.equals("")){
+                                if (filename.equals("")) {
                                     System.out.println("There was no input, canceling...");
                                     continue;
                                 }
@@ -155,7 +159,7 @@ public class App {
                                 }
                                 System.out.print(Publisher.TAG + "Please enter the name of video you want to remove: ");
                                 String filename = in.readLine();
-                                if (filename.equals("")){
+                                if (filename.equals("")) {
                                     System.out.println("There was no input, canceling...");
                                     continue;
                                 }
@@ -165,7 +169,7 @@ public class App {
                                 break;
                             }
 
-                            //in.close();
+                            // in.close();
                         } catch (IOException io) {
                             io.printStackTrace();
                         }
