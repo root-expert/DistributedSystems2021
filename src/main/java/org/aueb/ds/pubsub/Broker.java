@@ -378,12 +378,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         }
                     } else if (action.equals("disconnectP")) {
                         // Receive the channel to remove from the registered publishers
-                        String cn = in.readUTF();
+                        Publisher publisher = (Publisher) in.readObject();
 
                         synchronized (broker) {
-                            broker.registeredPublishers.stream()
-                                    .filter(it -> it.getChannelName().channelName.equals(cn)).findFirst()
-                                    .ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
+                            broker.registeredPublishers.remove(publisher);
+                            broker.publisherHashtags.remove(publisher);
                         }
                     } else if (action.equals("getBrokerInfo")) {
                         synchronized (broker) {
@@ -431,9 +430,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             /* If it is the last Publisher "holding" that topic then remove the topic
                              * from every data structure
                              */
-                            if (count == 1) {
+                            if (count <= 1) {
                                 broker.videoList.remove(topic);
                                 broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                                // Update rest of the brokers about this change
                                 broker.notifyBrokersOnChanges();
                                 // Update consumer's broker list
                                 broker.updateNodes();

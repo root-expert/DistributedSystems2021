@@ -166,6 +166,7 @@ public class App {
                                 publisher.removeVideo(filename);
                             } else {
                                 System.out.println("Exiting..");
+                                System.exit(0);
                                 break;
                             }
 
