@@ -35,6 +35,7 @@ public class App {
                 // start broker
                 Broker broker = new Broker(brokerConfig);
                 Thread brokerThread = new Thread(broker);
+                brokerThread.setName("broker-thread");
                 brokerThread.start();
                 break;
             case "node":

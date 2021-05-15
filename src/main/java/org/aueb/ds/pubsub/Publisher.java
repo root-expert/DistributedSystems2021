@@ -550,6 +550,17 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         }
                         out.writeInt(exitCode);
                         out.flush();
+                    } else if (action.equals("brokerChange")) {
+                        Broker broker = (Broker) in.readObject();
+                        HashSet<String> hashtags = (HashSet<String>) in.readObject();
+
+                        synchronized (publisher) {
+                            // Remove the broker from the list
+                            publisher.getBrokers().remove(broker);
+
+                            // Find new broker
+                            hashtags.forEach(hashtag -> publisher.notifyBrokersForHashTags(hashtag, true));
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
@@ -559,6 +570,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 socket.close();
             } catch (IOException io) {
                 System.out.println(TAG + "Error in input or output: " + io.getMessage());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }
