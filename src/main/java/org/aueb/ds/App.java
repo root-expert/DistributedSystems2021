@@ -7,9 +7,10 @@ import org.aueb.ds.pubsub.Consumer;
 import org.aueb.ds.pubsub.Publisher;
 import org.aueb.ds.util.ConfigParser;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.util.Scanner;
+import java.io.InputStreamReader;
 
 public class App {
 
@@ -56,7 +57,7 @@ public class App {
                 consThread.start();
 
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -65,7 +66,7 @@ public class App {
                 // Menu
                 new Thread(() -> {
                     try {
-                        Thread.sleep(2500);
+                        Thread.sleep(1000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -77,43 +78,72 @@ public class App {
                         System.out.println("[4] Remove Video");
                         System.out.println("[5] Exit");
 
-                        Scanner scanner = new Scanner(System.in);
+                        BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
                         int ans;
-                        do {
-                            System.out.print("Choose a number for your action: ");
-                            ans = scanner.nextInt();
-                        } while (ans < 1 || ans > 5);
+                        try {
+                            do {
+                                System.out.print("Choose a number for your action: ");
+                                ans = Integer.parseInt(in.readLine());
+                            } while (ans < 1 || ans > 5);
 
-                        if (ans == 1) {
-                            System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
-                            String topic = scanner.next();
-                            consumer.subscribe(consumer.findBroker(topic), topic);
-                        } else if (ans == 2) {
-                            System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
-                            String topic = scanner.next();
-                            consumer.unsubscribe(consumer.findBroker(topic), topic);
-                        } else if (ans == 3) {
-                            System.out.print(Publisher.TAG + "Please enter the name of the video you want to upload: ");
-                            String fileName = scanner.next();
-                            File cwd = new File(System.getProperty("user.dir"));
-                            for (File file : cwd.listFiles()) {
-                                if (file.getName().contains(".mp4") && file.getName().contains(fileName))
-                                    publisher.addVideo(file.getName());
-                            }
-                        } else if (ans == 4) {
-                            System.out.println("\nYou can remove these videos");
-                            for (String name : publisher.getChannelName().userVideoFilesMap.keySet()) {
-                                System.out.println("* " + name);
+                            if (ans == 1) {
+                                boolean subscribed = false;
+
+                                while (!subscribed) {
+                                    System.out.print(Consumer.TAG + "Please enter a topic to subscribe: ");
+                                    String topic = in.readLine();
+                                    subscribed = consumer.subscribe(consumer.findBroker(topic), topic);
+
+                                    if (!subscribed) {
+                                        System.out.print(Consumer.TAG + "We couldn't subscribe you to the specified topic. " +
+                                                "Do you want to pick a different one? (y/n): ");
+                                        String answer = in.readLine();
+
+                                        while (!answer.equals("y") && !answer.equals("n")) {
+                                            System.out.print("Please enter y or n: ");
+                                            answer = in.readLine();
+                                        }
+
+                                        if (answer.equals("n"))
+                                            break;
+                                    }
+                                }
+                            } else if (ans == 2) {
+                                System.out.print(Consumer.TAG + "Please enter a topic to unsubscribe: ");
+                                String topic = in.readLine();
+                                consumer.unsubscribe(consumer.findBroker(topic), topic);
+                            } else if (ans == 3) {
+                                System.out.print(Publisher.TAG + "Please enter the name of the video you want to upload: ");
+                                String fileName = in.readLine();
+                                File cwd = new File(System.getProperty("user.dir"));
+                                for (File file : cwd.listFiles()) {
+                                    if (file.getName().contains(".mp4") && file.getName().contains(fileName))
+                                        publisher.addVideo(file.getName());
+                                }
+                            } else if (ans == 4) {
+                                System.out.println("\nYou can remove these videos");
+                                for (String name : publisher.getChannelName().userVideoFilesMap.keySet()) {
+                                    System.out.println("* " + name);
+                                }
+
+                                System.out.print(Publisher.TAG + "Please enter the name of video you want to remove: ");
+                                String filename = in.readLine();
+                                publisher.removeVideo(filename);
+                            } else {
+                                System.out.println("Exiting..");
+                                break;
                             }
 
-                            System.out.print(Publisher.TAG + "Please enter the name of video you want to remove: ");
-                            String filename = scanner.next();
-                            publisher.removeVideo(filename);
-                        } else {
-                            System.out.println("Exiting..");
-                            break;
+                            //in.close();
+                        } catch (IOException io) {
+                            io.printStackTrace();
                         }
-                        scanner.close();
+
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }).start();
 

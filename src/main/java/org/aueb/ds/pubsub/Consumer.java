@@ -11,15 +11,15 @@ import java.util.*;
 
 public class Consumer extends AppNode implements Runnable, Serializable {
 
-    private static final long serialVersionUID = -8644673594536043061L;
-
-    protected String channelName;
-    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
-    private ArrayList<String> subscribedItems = new ArrayList<>(); // Contains Consumer's subscribed topics
-                                                                   // (channelName/Hashtags)
     public static final String TAG = "[Consumer] ";
 
     protected AppNodeConfig config;
+    protected String channelName;
+
+    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
+    // Contains Consumer's subscribed topics
+    private ArrayList<String> subscribedItems = new ArrayList<>();
+    private static final long serialVersionUID = -8644673594536043061L;
 
     public Consumer() {
     }
@@ -34,11 +34,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      */
     @Override
     public void init() {
+        channelName = config.getChannelName();
 
         // Make directory to save files
         new File(System.getProperty("user.dir") + "/out/").mkdirs();
 
-        channelName = config.getChannelName();
         Connection connection = null;
         boolean connected = false;
 
@@ -77,9 +77,15 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      *
      * @param broker The broker to subscribe.
      * @param topic  The topic to be subscribed on.
+     * @return true if the subscription was successful else false
      */
-    public void subscribe(Broker broker, String topic) {
+    public boolean subscribe(Broker broker, String topic) {
         Connection connection = null;
+
+        if (subscribedItems.contains(topic)) {
+            System.out.println(TAG + "You are already subscribed to " + topic);
+            return false;
+        }
 
         try {
             connection = connect(broker.config.getIp(), broker.config.getPort());
@@ -92,33 +98,21 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             if (exitCode == 1) {
                 System.out.println(TAG + "The topic does not exist. Redirecting to correct broker.");
 
-                subscribe((Broker) connection.in.readObject(), topic);
+                return subscribe((Broker) connection.in.readObject(), topic);
             } else if (exitCode == -1) {
-                System.out.println(TAG + "The topic does not exist. Please pick a different one!");
-            } else if (exitCode == -2) {
-                System.out.println(TAG + "Subscription successful. There are no videos currently to receive!");
+                System.out.println(TAG + "The specified topic does not exist.");
+                return false;
             } else {
-                System.out.println(TAG + "Subscription successful. Receiving videos for new topic!");
-                // Receive the number of videos to be viewed
-                int numVideos = connection.in.readInt();
-                if (numVideos == 0)
-                    System.out.println(TAG + "No videos available right now. Try again later!");
-
-                for (int video = 0; video < numVideos; video++) {
-                    // Construct the video
-                    ArrayList<Value> fullVideo = new ArrayList<>();
-                    int numChunks = connection.in.readInt();
-                    for (int bin = 0; bin < numChunks; bin++) {
-                        fullVideo.add((Value) connection.in.readObject());
-                    }
-                    // And store it locally
-                    playData(fullVideo);
-                }
+                System.out.println(TAG + "Subscription successful!");
+                subscribedItems.add(topic);
+                return true;
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         } catch (ClassNotFoundException cf) {
             System.out.println("Error: invalid cast :" + cf.getMessage());
+            return false;
         } finally {
             super.disconnect(connection);
         }
@@ -131,6 +125,11 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      * @param topic  The topic to unsubscribe from.
      */
     public void unsubscribe(Broker broker, String topic) {
+        if (!subscribedItems.contains(topic)) {
+            System.out.println(TAG + "You are not subscribed to " + topic);
+            return;
+        }
+
         Connection connection = null;
 
         try {
@@ -142,6 +141,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             int exitCode = connection.in.readInt();
             if (exitCode == 0) {
                 System.out.println(TAG + "Successful unsubscription from topic.");
+                subscribedItems.remove(topic);
             } else if (exitCode == -1) {
                 System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {
@@ -233,7 +233,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hashtagInfo);
+        return Objects.hash(channelName);
     }
 
     /**
@@ -303,6 +303,20 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                         synchronized (consumer) {
                             consumer.hashtagInfo.put(broker, hashtags);
                         }
+                    } else if (action.equals("newVideos")) {
+                        System.out.println();
+                        System.out.println(TAG + "Receiving new videos...");
+                        int numOfVideos = in.readInt();
+
+                        for (int i = 0; i < numOfVideos; i++) {
+                            ArrayList<Value> video = new ArrayList<>();
+                            int numOfChunks = in.readInt();
+                            for (int j = 0; j < numOfChunks; j++) {
+                                video.add((Value) in.readObject());
+                            }
+
+                            consumer.playData(video);
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
@@ -314,6 +328,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 socket.close();
             } catch (IOException io) {
                 System.out.println("Error: problem in input/output" + io.getMessage());
+                io.printStackTrace();
             } catch (Exception e) {
                 System.out.println("Error: " + e.getMessage());
             }

@@ -61,7 +61,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     /**
-     * 
+     *
      * @param videos  the list of videos(chunked) to be sent to the Consumer
      * @param channel the channel name of the consumer we have to send videos to
      * @return the set of videos that can be sent to the consumer without
@@ -80,7 +80,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         return toSend;
     }
 
-    public synchronized void notifyPublisher(String topic) {
+    public void notifyPublisher(String topic) {
         // if at least one publisher is related to the topic
         Connection connection;
         /*
@@ -110,7 +110,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * Notifies the rest of the brokers for changes on the hashtags this specific
      * broker is responsible for.
      */
-    public synchronized void notifyBrokersOnChanges() {
+    public void notifyBrokersOnChanges() {
         for (Broker broker : brokerAssociatedHashtags.keySet()) {
             if (broker.hash.equals(this.hash))
                 continue;
@@ -215,7 +215,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     /*
      * Update Consumer's Broker list after a hashtag has been added or removed.
      */
-    public synchronized void updateNodes() {
+    public void updateNodes() {
         for (Consumer consumer : registeredUsers) {
             Connection connection = null;
             try {
@@ -231,6 +231,48 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 disconnect(connection);
             }
         }
+    }
+
+    private void updatePendingConsumers(String topic) {
+        HashSet<Consumer> consumers = this.userHashtags.get(topic);
+
+        if (consumers == null) return;
+        if (consumers.isEmpty()) return;
+
+        notifyPublisher(topic);
+        ArrayList<ArrayList<Value>> availableVideos = videoList.get(topic);
+
+        consumers.forEach(consumer -> {
+            HashSet<ArrayList<Value>> toSend = this.filterConsumers(availableVideos, consumer.channelName);
+            try {
+                pushToConsumer(consumer, toSend);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Clear the videos
+        videoList.get(topic).clear();
+    }
+
+    private void pushToConsumer(Consumer consumer, HashSet<ArrayList<Value>> toSend) throws IOException {
+        if (toSend.isEmpty()) return;
+
+        Connection connection;
+
+        connection = connect(consumer.config.getIp(), consumer.config.getConsumerPort());
+        connection.out.writeUTF("newVideos");
+        connection.out.writeInt(toSend.size());
+
+        for (ArrayList<Value> video : toSend) {
+            connection.out.writeInt(video.size());
+            for (Value chunk : video) {
+                connection.out.writeObject(chunk);
+            }
+        }
+
+        connection.out.flush();
+        disconnect(connection);
     }
 
     @Override
@@ -363,23 +405,32 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     .ifPresent(publisher -> broker.publisherHashtags.get(publisher).add(topic));
 
                             broker.videoList.put(topic, new ArrayList<>());
+
+                            // Notify rest of the brokers about the new hashtag
+                            broker.notifyBrokersOnChanges();
+                            // Update consumers broker list
+                            broker.updateNodes();
+
+                            // Send videos to subscribed consumers
+                            broker.updatePendingConsumers(topic);
                         }
-                        broker.notifyBrokersOnChanges();
-                        // Update consumer's broker list
-                        broker.updateNodes();
                     } else if (action.equals("RemoveHashTag")) {
                         // Receive the topic to remove from the broker (if it exists)
                         String topic = in.readUTF();
                         String channelName = in.readUTF();
 
                         synchronized (broker) {
-                            long count = broker.publisherHashtags.values().stream().filter(it -> it.contains(topic))
+                            long count = broker.publisherHashtags.values().stream()
+                                    .filter(it -> it.contains(topic))
                                     .count();
 
                             broker.publisherHashtags.keySet().stream()
                                     .filter(it -> it.getChannelName().channelName.equals(channelName)).findFirst()
                                     .ifPresent(publisher -> broker.publisherHashtags.get(publisher).remove(topic));
 
+                            /* If it is the last Publisher "holding" that topic then remove the topic
+                             * from every data structure
+                             */
                             if (count == 1) {
                                 broker.videoList.remove(topic);
                                 broker.brokerAssociatedHashtags.get(broker).remove(topic);
@@ -392,8 +443,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         // Read the consumer object and the topic
                         Consumer subscriber = (Consumer) in.readObject();
                         String topic = in.readUTF();
-                        // If the broker is associated with this topic
-                        // and therefore provide videos for it
+                        // If the broker is associated with this topic and therefore provide videos for it
                         if (broker.brokerAssociatedHashtags.get(broker).contains(topic)) {
                             /*
                              * If there are no consumers subscribed to this topic initialize the repository
@@ -405,40 +455,28 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                 }
                                 // Add the Consumer to the repository and reconstruct the list
                                 // of the videos to be sent to them
-                                broker.userHashtags.get(topic).add(subscriber);
-                                ArrayList<ArrayList<Value>> videos = broker.videoList.get(topic);
+                                HashSet<Consumer> consumers = broker.userHashtags.get(topic);
 
-                                if (videos != null)
-                                    broker.videoList.get(topic).clear();
-                            }
-                            broker.notifyPublisher(topic);
-
-                            synchronized (broker) {
-                                if (!broker.videoList.get(topic).isEmpty()) {
-                                    out.writeInt(0);
-                                    out.flush();
-                                    // Create a Set with the videos to be sent the consumer, where
-                                    // the consumer's own videos are excluded
-                                    HashSet<ArrayList<Value>> toSend = broker
-                                            .filterConsumers(broker.videoList.get(topic), subscriber.channelName);
-
-                                    // Send the amount of videos to be sent
-                                    int numVideos = toSend.size();
-                                    out.writeInt(numVideos);
-                                    out.flush();
-                                    for (ArrayList<Value> video : toSend) {
-                                        // Send the amount chunks each video has
-                                        out.writeInt(video.size());
-                                        out.flush();
-                                        for (Value chunk : video) {
-                                            out.writeObject(chunk);
-                                            out.flush();
-                                        }
-                                    }
+                                if (consumers == null) {
+                                    consumers = new HashSet<>();
+                                    consumers.add(subscriber);
+                                    broker.userHashtags.put(topic, consumers);
                                 } else {
-                                    out.write(-2);
-                                    out.flush();
+                                    consumers.add(subscriber);
                                 }
+
+                                // Fetch videos
+                                broker.notifyPublisher(topic);
+                                HashSet<ArrayList<Value>> toSend = broker.filterConsumers(broker.videoList.get(topic), subscriber.channelName);
+
+                                // Send success code
+                                out.writeInt(0);
+                                out.flush();
+
+                                // Send the videos to consumer
+                                broker.pushToConsumer(subscriber, toSend);
+                                // Clear the videos
+                                broker.videoList.get(topic).clear();
                             }
                         } else {
                             boolean found = false;
@@ -482,7 +520,10 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         Consumer consumer = (Consumer) in.readObject();
 
                         synchronized (broker) {
-                            broker.registeredUsers.add(consumer);
+                            boolean added = broker.registeredUsers.add(consumer);
+
+                            if (added)
+                                broker.updateNodes();
                         }
                     } else if (action.equals("unregister")) {
                         Consumer consumer = (Consumer) in.readObject();
@@ -515,8 +556,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                                     break;
                                 }
                             }
+                            broker.updateNodes();
                         }
-                        broker.updateNodes();
                     } else if (action.equals("end")) {
                         break;
                     }

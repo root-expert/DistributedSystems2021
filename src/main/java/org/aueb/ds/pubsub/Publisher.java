@@ -11,16 +11,18 @@ import org.aueb.ds.util.MetadataExtract;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
 
 public class Publisher extends AppNode implements Runnable, Serializable {
 
-    private static final long serialVersionUID = -6645374596536043061L;
+    public static final String TAG = "[Publisher] ";
+    protected AppNodeConfig config;
 
     private ChannelName channelName;
-    public static final String TAG = "[Publisher] ";
-
-    protected AppNodeConfig config;
+    private static final long serialVersionUID = -6645374596536043061L;
 
     public Publisher() {
 
@@ -32,6 +34,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void init() {
+        // Initialize the channel name object
+        channelName = new ChannelName(config.getChannelName());
+
         boolean brokersAvailable = false;
 
         while (!brokersAvailable) {
@@ -46,9 +51,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 brokersAvailable = true;
             }
         }
-
-        // Initialize the channel name object
-        channelName = new ChannelName(config.getChannelName());
 
         // Find all the videos on the Publisher's folder
         File cwd = new File(System.getProperty("user.dir"));
@@ -76,6 +78,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 addHashTag(hash);
             }
         }
+        addHashTag(channelName.channelName);
     }
 
     /**
@@ -391,7 +394,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     @Override
     public void run() {
-        init();
+        new Thread(this::init).start();
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
             while (true) {
