@@ -196,8 +196,8 @@ public class App {
                 try {
                     pubThread.join();
                     consThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (InterruptedException ignored) {
+
                 }
                 break;
             default:
