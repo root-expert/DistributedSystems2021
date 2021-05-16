@@ -237,7 +237,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      */
     private ArrayList<Value> generateChunks(String filename) {
         ArrayList<Value> video = null;
-        final int chunkSize = 1024 * 1024;
+        final int CHUNK_SIZE = 512 * 1024;
 
         try {
             // Generate the proper filename to use for the File class
@@ -261,7 +261,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             int len = raf.read(fullVideo);
 
             // calculate the number of 10KB full bins
-            int bins = Math.floorDiv(len, chunkSize);
+            int bins = Math.floorDiv(len, CHUNK_SIZE);
 
             /*
              * initialising the chunk arraylist as well as the temporary variables to
@@ -275,11 +275,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
             // Fill each new Value with the corresponding part of the full video array
             for (int currentbin = 0; currentbin < bins; currentbin++) {
-                chunk = new byte[chunkSize];
+                chunk = new byte[CHUNK_SIZE];
 
                 // Map the correct interval of the full video array to copy to the chunk
-                for (int cByte = 0; cByte < chunkSize; cByte++) {
-                    chunk[cByte] = fullVideo[cByte + currentbin * chunkSize];
+                for (int cByte = 0; cByte < CHUNK_SIZE; cByte++) {
+                    chunk[cByte] = fullVideo[cByte + currentbin * CHUNK_SIZE];
                 }
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(name + "_" + currentbin, this.channelName.channelName,
@@ -292,12 +292,12 @@ public class Publisher extends AppNode implements Runnable, Serializable {
              * Calculate the remaining rogue bytes, if any and create a final byte[] with
              * less than 10240 bytes to house them, and follow the same procedure
              */
-            int remaining = len - (bins * chunkSize);
+            int remaining = len - (bins * CHUNK_SIZE);
             if (remaining > 0) {
                 // the chunks have to be of equal size
                 chunk = new byte[remaining];
                 for (int cByte = 0; cByte < remaining; cByte++) {
-                    chunk[cByte] = fullVideo[bins * chunkSize + cByte];
+                    chunk[cByte] = fullVideo[bins * CHUNK_SIZE + cByte];
                 }
                 // Create the Value objects and add them to the video ArrayList
                 videoChunk.videoFile = new VideoFile(name + "_" + bins, this.channelName.channelName,
