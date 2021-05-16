@@ -16,9 +16,9 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     protected AppNodeConfig config;
     protected String channelName;
 
-    private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
+    private final HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
     // Contains Consumer's subscribed topics
-    private ArrayList<String> subscribedItems = new ArrayList<>();
+    private final ArrayList<String> subscribedItems = new ArrayList<>();
     private boolean acceptingConnections = true;
     private static final long serialVersionUID = -8644673594536043061L;
 
@@ -116,7 +116,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             e.printStackTrace();
             return false;
         } catch (ClassNotFoundException cf) {
-            System.out.println("Error: invalid cast :" + cf.getMessage());
+            System.out.println(TAG + "Error: invalid cast :" + cf.getMessage());
             return false;
         } finally {
             super.disconnect(connection);
@@ -151,7 +151,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 System.out.println(TAG + "The topic to be unsubscribed from does not exist.");
             } else {
                 System.out.println(TAG
-                        + "Unsubsciption Failed. The consumer was not subscribed to the topic, in the first place.");
+                        + "Unsubscription Failed. The consumer was not subscribed to the topic, in the first place.");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -179,7 +179,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
             fos.flush();
             fos.close();
         } catch (FileNotFoundException f) {
-            System.out.println("Error: could not find file: " + f.getMessage());
+            System.out.println(TAG + "Error: could not find file: " + f.getMessage());
+            f.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -197,7 +198,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     @Override
     public Connection connect(String ip, int port) throws IOException {
         // Open Socket connection with the Broker
-        Connection connection = null;
+        Connection connection;
 
         connection = super.connect(ip, port);
         connection.out.writeUTF("register");
@@ -376,16 +377,16 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                         break;
                     }
                 }
-                // Close streams if defined
+                // Close streams
                 out.flush();
                 out.close();
                 in.close();
                 socket.close();
             } catch (IOException io) {
-                System.out.println("Error: problem in input/output" + io.getMessage());
+                System.out.println(TAG + "Error: problem in input/output" + io.getMessage());
                 io.printStackTrace();
-            } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }

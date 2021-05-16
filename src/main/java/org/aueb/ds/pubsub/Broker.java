@@ -19,33 +19,32 @@ import java.util.Objects;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
-    private static final long serialVersionUID = -6648374896546053061L;
+    protected BrokerConfig config;
+    protected String hash;
 
-    private HashSet<Consumer> registeredUsers = new HashSet<>();
-    private HashSet<Publisher> registeredPublishers = new HashSet<>();
+    private final HashSet<Consumer> registeredUsers = new HashSet<>();
+    private final HashSet<Publisher> registeredPublishers = new HashSet<>();
 
     // Contains which hashtags each Publisher is responsible for
-    private HashMap<Publisher, HashSet<String>> publisherHashtags = new HashMap<>();
+    private final HashMap<Publisher, HashSet<String>> publisherHashtags = new HashMap<>();
 
     /*
      * videoList: is a list with all videos(already chunked from the publisher)
      * concerning a certain topic. It only contains the topics the broker is
      * associated with.
      */
-    private HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
+    private final HashMap<String, ArrayList<ArrayList<Value>>> videoList = new HashMap<>();
 
     // userHashtags: a hashmap that holds the set of Consumer objects that are
     // associated with this topic.
-    private HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
+    private final HashMap<String, HashSet<Consumer>> userHashtags = new HashMap<>();
 
     // brokerAssociatedHashtags: a hashmap that contains all the hashtag each broker
     // is associated with.
-    private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
+    private final HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
     private boolean acceptingConnections = true;
-
-    protected BrokerConfig config;
-    protected String hash;
+    private static final long serialVersionUID = -6648374896546053061L;
 
     public Broker() {
     }
@@ -66,7 +65,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
      * @param videos  the list of videos(chunked) to be sent to the Consumer
      * @param channel the channel name of the consumer we have to send videos to
      * @return the set of videos that can be sent to the consumer without
-     *         overlappinng with videos the consumer already has
+     *         overlapping with videos the consumer already has
      */
     private HashSet<ArrayList<Value>> filterConsumers(ArrayList<ArrayList<Value>> videos, String channel) {
         HashSet<ArrayList<Value>> toSend = new HashSet<>();
@@ -234,6 +233,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         }
     }
 
+    /**
+     * Finds which consumers are subscribed to the specified topic
+     * and notifies the publisher to push the videos.
+     *
+     * @param topic The topic to be notified for.
+     */
     private void updatePendingConsumers(String topic) {
         HashSet<Consumer> consumers = this.userHashtags.get(topic);
 
@@ -256,6 +261,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         videoList.get(topic).clear();
     }
 
+    /**
+     * Pushed the specified videos to the specified consumer
+     *
+     * @param consumer The consumer to push the videos to.
+     * @param toSend   Videos to send.
+     */
     private void pushToConsumer(Consumer consumer, HashSet<ArrayList<Value>> toSend) throws IOException {
         if (toSend.isEmpty()) return;
 
@@ -653,7 +664,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         break;
                     }
                 }
-                // Close streams if defined
+                // Close streams
                 out.flush();
                 out.close();
                 in.close();

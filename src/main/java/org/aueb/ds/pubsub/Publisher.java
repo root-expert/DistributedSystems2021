@@ -95,7 +95,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 removeHashTag(hashtag);
             }
         } else {
-            System.out.println(TAG + "there is no video with that name to be removed");
+            System.out.println(TAG + "There is no video with that name to be removed");
         }
         // remove the video from the publisher's video list
         channelName.userVideoFilesMap.remove(actualName);
@@ -107,7 +107,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 return;
             }
         }
-        System.out.println("The video did not exist.");
+        System.out.println(TAG + "The video did not exist.");
     }
 
     /**
@@ -204,27 +204,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     }
 
     /**
-     * Notifies about a failed push operation.
-     *
-     * @param broker The Broker to notify.
-     */
-    private void notifyFailure(Broker broker) {
-        Connection connection = null;
-
-        try {
-            connection = super.connect(broker.config.getIp(), broker.config.getPort());
-            connection.out.writeUTF("PushFailed");
-            connection.out.writeUTF(channelName.channelName);
-
-            connection.out.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            super.disconnect(connection);
-        }
-    }
-
-    /**
      * Notifies the Broker about new content (hashtag)
      *
      * @param hashtag The hashtag to be notified.
@@ -266,9 +245,9 @@ public class Publisher extends AppNode implements Runnable, Serializable {
             if (!filename.contains(".mp4")) {
                 tempName += ".mp4";
             }
-            // Seperate the name from the hashtags
+            // Separate the name from the hashtags
             String[] args = tempName.replace(".mp4", "").split("#");
-            HashSet<String> hashtags = new HashSet<String>();
+            HashSet<String> hashtags = new HashSet<>();
             String name = args[0];
             for (int i = 1; i < args.length; i++) {
                 hashtags.add("#" + args[i]);
@@ -292,7 +271,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
             Value videoChunk = new Value();
 
-            byte[] chunk = null;
+            byte[] chunk;
 
             // Fill each new Value with the corresponding part of the full video array
             for (int currentbin = 0; currentbin < bins; currentbin++) {
