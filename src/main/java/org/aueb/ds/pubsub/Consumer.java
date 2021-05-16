@@ -19,6 +19,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     private HashMap<Broker, HashSet<String>> hashtagInfo = new HashMap<>();
     // Contains Consumer's subscribed topics
     private ArrayList<String> subscribedItems = new ArrayList<>();
+    private boolean acceptingConnections = true;
     private static final long serialVersionUID = -8644673594536043061L;
 
     public Consumer() {
@@ -213,6 +214,8 @@ public class Consumer extends AppNode implements Runnable, Serializable {
      */
     @Override
     public void disconnect(Connection connection) {
+        if (connection == null) return;
+
         try {
             connection.out.writeUTF("unregister");
             connection.out.writeObject(this);
@@ -249,29 +252,69 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     public Broker findBroker(String topic) {
         Broker selected = null;
 
-        synchronized (this) {
-            for (Broker broker : hashtagInfo.keySet()) {
-                if (hashtagInfo.get(broker).contains(topic)) {
-                    selected = broker;
-                }
-            }
-
-            if (selected == null) {
-                System.out.println(TAG + "Couldn't find broker. Picking a random one");
-                int randomIdx = new Random().nextInt(hashtagInfo.size());
-                selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+        for (Broker broker : hashtagInfo.keySet()) {
+            if (hashtagInfo.get(broker).contains(topic)) {
+                selected = broker;
             }
         }
+
+        if (selected == null) {
+            System.out.println(TAG + "Couldn't find broker. Picking a random one");
+            int randomIdx = new Random().nextInt(hashtagInfo.size());
+            selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
+        }
         return selected;
+    }
+
+    private void cleanup() {
+        // Find which broker is responsible for every subscribed topic
+        HashSet<Broker> registeredBrokers = new HashSet<>();
+
+        synchronized (this) {
+            subscribedItems.forEach(topic -> registeredBrokers.add(findBroker(topic)));
+
+            // Unsubscribe from every topic
+            subscribedItems.forEach(topic -> unsubscribe(findBroker(topic), topic));
+        }
+
+        // Unregister from every broker
+        registeredBrokers.forEach(broker -> {
+            Connection connection = null;
+            try {
+                connection = super.connect(broker.config.getIp(), broker.config.getPort());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            disconnect(connection);
+        });
+
+        // Stop receiving connections
+        this.acceptingConnections = false;
+
+        Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> thread.getName().startsWith("Thread-"))
+                .forEach(thread -> {
+                    if (thread.isAlive())
+                        thread.interrupt();
+                });
     }
 
     @Override
     public void run() {
         init();
+
+        // If the JVM is shutting down call cleanup()
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println();
+            System.out.println(TAG + "Shutting down gracefully...");
+            cleanup();
+        }));
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getConsumerPort());
 
-            while (true) {
+            while (acceptingConnections) {
                 Socket socket = serverSocket.accept();
                 Thread handler = new Thread(new Handler(socket, this));
                 handler.start();
@@ -297,7 +340,7 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-                while (!socket.isClosed()) {
+                while (!socket.isClosed() && !Thread.interrupted()) {
                     // Reading the action required
                     String action = in.readUTF();
                     if (action.equals("updateBrokerList")) {
@@ -320,6 +363,14 @@ public class Consumer extends AppNode implements Runnable, Serializable {
                             }
 
                             consumer.playData(video);
+                        }
+                    } else if (action.equals("forceUnsubscribe")) {
+                        String topic = in.readUTF();
+
+                        synchronized (consumer) {
+                            consumer.subscribedItems.remove(topic);
+                            System.out.println();
+                            System.out.println(TAG + "You were unsubscribed from " + topic + " as it is no longer available.");
                         }
                     } else if (action.equals("end")) {
                         break;

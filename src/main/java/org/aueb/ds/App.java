@@ -35,6 +35,7 @@ public class App {
                 // start broker
                 Broker broker = new Broker(brokerConfig);
                 Thread brokerThread = new Thread(broker);
+                brokerThread.setName("broker-thread");
                 brokerThread.start();
                 break;
             case "node":
@@ -53,6 +54,8 @@ public class App {
 
                 Thread pubThread = new Thread(publisher);
                 Thread consThread = new Thread(consumer);
+                pubThread.setName("publisher-thread");
+                consThread.setName("consumer-thread");
 
                 consThread.start();
 
@@ -104,7 +107,11 @@ public class App {
                                             continue;
                                         break;
                                     }
-                                    subscribed = consumer.subscribe(consumer.findBroker(topic), topic);
+                                    Broker selected;
+                                    synchronized (consumer) {
+                                        selected = consumer.findBroker(topic);
+                                    }
+                                    subscribed = consumer.subscribe(selected, topic);
 
                                     if (!subscribed) {
                                         System.out.print(
@@ -131,7 +138,11 @@ public class App {
                                     System.out.println("There was no input, canceling...");
                                     continue;
                                 }
-                                consumer.unsubscribe(consumer.findBroker(topic), topic);
+                                Broker selected;
+                                synchronized (consumer) {
+                                    selected = consumer.findBroker(topic);
+                                }
+                                consumer.unsubscribe(selected, topic);
                             } else if (ans == 3) {
                                 File cwd = new File(System.getProperty("user.dir"));
                                 for (File file : cwd.listFiles()) {
@@ -165,7 +176,7 @@ public class App {
                                 }
                                 publisher.removeVideo(filename);
                             } else {
-                                System.out.println("Exiting..");
+                                System.exit(0);
                                 break;
                             }
 
@@ -185,8 +196,8 @@ public class App {
                 try {
                     pubThread.join();
                     consThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (InterruptedException ignored) {
+
                 }
                 break;
             default:
