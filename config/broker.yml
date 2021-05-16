@@ -2,5 +2,5 @@ ip: localhost
 port: 24568
 # IP:Port of the rest of the Brokers
 brokers:
-  - 192.168.2.10:24569
-  - 192.168.2.11:24570
+  - localhost:24569
+  - localhost:24570
