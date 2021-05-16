@@ -39,3 +39,4 @@ bin/
 .classpath
 .project
 build/libs/
+!gradle/wrapper/gradle-wrapper.jar
