@@ -42,6 +42,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     // is associated with.
     private HashMap<Broker, HashSet<String>> brokerAssociatedHashtags = new HashMap<>();
     private static final String TAG = "[Broker] ";
+    private boolean acceptingConnections = true;
 
     protected BrokerConfig config;
     protected String hash;
@@ -275,6 +276,86 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         disconnect(connection);
     }
 
+    /**
+     * Force unsubscribes consumer from a topic. This method is called
+     * whenever a Broker or a Publisher handling a topic shuts down.
+     *
+     * @param topic The topic to be unsubscribed from.
+     */
+    private void forceUnsubscribe(String topic) throws IOException {
+        HashSet<Consumer> consumers = userHashtags.get(topic);
+
+        if (consumers == null) return;
+        if (consumers.isEmpty()) return;
+
+        for (Consumer consumer : consumers) {
+            Connection connection = connect(consumer.config.getIp(), consumer.config.getConsumerPort());
+            connection.out.writeUTF("forceUnsubscribe");
+            connection.out.writeUTF(topic);
+            connection.out.flush();
+
+            disconnect(connection);
+        }
+    }
+
+    /**
+     * Shuts the Broker down gracefully.
+     */
+    private void cleanup() {
+        // Unsubscribe all the consumers
+        userHashtags.keySet().forEach(hashtag -> {
+            try {
+                forceUnsubscribe(hashtag);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Remove the broker
+        this.brokerAssociatedHashtags.keySet().stream()
+                .filter(broker -> !broker.hash.equals(this.hash))
+                .forEach(broker -> {
+                    Connection connection = null;
+                    try {
+                        connection = connect(broker.config.getIp(), broker.config.getPort());
+                        connection.out.writeUTF("removeBroker");
+                        connection.out.writeObject(this);
+                        connection.out.flush();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } finally {
+                        disconnect(connection);
+                    }
+                });
+
+        // Force Publisher to change Broker
+        this.publisherHashtags.forEach((publisher, hashtags) -> {
+            Connection connection = null;
+
+            try {
+                connection = connect(publisher.config.getIp(), publisher.config.getPublisherPort());
+                connection.out.writeUTF("brokerChange");
+                connection.out.writeObject(this);
+                connection.out.writeObject(hashtags);
+                connection.out.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                disconnect(connection);
+            }
+        });
+
+        this.acceptingConnections = false;
+
+        // Shutdown all threads gracefully
+        Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> !thread.getName().equals("Thread-"))
+                .forEach(thread -> {
+                    if (thread.isAlive())
+                        thread.interrupt();
+                });
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -333,10 +414,17 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
 
         new Thread(brokerConnection).start();
 
+        // If the JVM is shutting down call cleanup()
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println();
+            System.out.println(TAG + "Shutting down gracefully...");
+            cleanup();
+        }));
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPort());
 
-            while (true) {
+            while (acceptingConnections) {
                 Socket socket = serverSocket.accept();
                 Thread handler = new Thread(new Handler(socket, this));
                 handler.start();
@@ -362,7 +450,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-                while (!socket.isClosed()) {
+                while (!socket.isClosed() && !Thread.interrupted()) {
                     // Reading the action required
                     String action = in.readUTF();
                     if (action.equals("connectP")) {
@@ -378,12 +466,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         }
                     } else if (action.equals("disconnectP")) {
                         // Receive the channel to remove from the registered publishers
-                        String cn = in.readUTF();
+                        Publisher publisher = (Publisher) in.readObject();
 
                         synchronized (broker) {
-                            broker.registeredPublishers.stream()
-                                    .filter(it -> it.getChannelName().channelName.equals(cn)).findFirst()
-                                    .ifPresent(toBeRemoved -> broker.registeredPublishers.remove(toBeRemoved));
+                            broker.registeredPublishers.remove(publisher);
+                            broker.publisherHashtags.remove(publisher);
                         }
                     } else if (action.equals("getBrokerInfo")) {
                         synchronized (broker) {
@@ -431,9 +518,13 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             /* If it is the last Publisher "holding" that topic then remove the topic
                              * from every data structure
                              */
-                            if (count == 1) {
+                            if (count <= 1) {
                                 broker.videoList.remove(topic);
                                 broker.brokerAssociatedHashtags.get(broker).remove(topic);
+                                // Force unsubscribe consumer from topic
+                                broker.forceUnsubscribe(topic);
+                                broker.userHashtags.remove(topic);
+                                // Update rest of the brokers about this change
                                 broker.notifyBrokersOnChanges();
                                 // Update consumer's broker list
                                 broker.updateNodes();

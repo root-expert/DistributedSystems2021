@@ -22,6 +22,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     protected AppNodeConfig config;
 
     private ChannelName channelName;
+    private boolean acceptingConnections = true;
     private static final long serialVersionUID = -6645374596536043061L;
 
     public Publisher() {
@@ -66,10 +67,10 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     /**
      * Adds video from the current publisher
-     * 
+     *
      * @param fileName the name of the .mp4 video file
      */
-    public void addVideo(String fileName) {
+    public synchronized void addVideo(String fileName) {
         ArrayList<Value> videos = generateChunks(fileName);
         String actualName = fileName.replace(".mp4", "").split("#")[0];
         if (!channelName.userVideoFilesMap.containsKey(actualName)) {
@@ -83,11 +84,11 @@ public class Publisher extends AppNode implements Runnable, Serializable {
 
     /**
      * Removes a video from the the Publisher
-     * 
+     *
      * @param filename the video file name to be removed(either the video name or
      *                 the .mp4 file name)
      */
-    public void removeVideo(String filename) {
+    public synchronized void removeVideo(String filename) {
         String actualName = filename.replace(".mp4", "").split("#")[0];
         if (channelName.userVideoFilesMap.containsKey(actualName)) {
             for (String hashtag : channelName.userVideoFilesMap.get(actualName).get(0).videoFile.associatedHashtags) {
@@ -127,7 +128,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param hashtag HashTag removed.
      */
-    private synchronized void removeHashTag(String hashtag) {
+    private void removeHashTag(String hashtag) {
         int hashtagCount = 0;
         for (ArrayList<Value> list : channelName.userVideoFilesMap.values()) {
             if (list.get(0).videoFile.associatedHashtags.contains(hashtag)) {
@@ -368,7 +369,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
              */
             connection.out.writeUTF("disconnectP");
             // send channel name to let the broker know which publisher to remove
-            connection.out.writeUTF(channelName.channelName);
+            connection.out.writeObject(this);
             connection.out.flush();
         } catch (Exception e) {
             System.out.println(TAG + "Error while sending disconnection message " + e.getMessage());
@@ -376,6 +377,38 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         } finally {
             super.disconnect(connection);
         }
+    }
+
+    private void cleanup() {
+        HashSet<Broker> registeredBrokers = new HashSet<>();
+
+        synchronized (this) {
+            // Find on which brokers we have been registered on
+            channelName.hashtagsPublished.forEach(hashtag -> registeredBrokers.add(hashTopic(hashtag)));
+
+            // Unregister topics
+            channelName.hashtagsPublished.forEach(hashtag -> notifyBrokersForHashTags(hashtag, false));
+        }
+
+        // Unregister Publisher from all Brokers
+        registeredBrokers.forEach(broker -> {
+            try {
+                Connection connection = super.connect(broker.config.getIp(), broker.config.getPort());
+                disconnect(connection);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Stop receiving new connections
+        this.acceptingConnections = false;
+
+        Thread.getAllStackTraces().keySet().stream()
+                .filter(thread -> thread.getName().startsWith("Thread-"))
+                .forEach(thread -> {
+                    if (thread.isAlive())
+                        thread.interrupt();
+                });
     }
 
     @Override
@@ -397,9 +430,16 @@ public class Publisher extends AppNode implements Runnable, Serializable {
     public void run() {
         new Thread(this::init).start();
 
+        // If the JVM is shutting down call cleanup()
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println();
+            System.out.println(TAG + "Shutting down gracefully...");
+            cleanup();
+        }));
+
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPublisherPort());
-            while (true) {
+            while (acceptingConnections) {
                 Socket socket = serverSocket.accept();
                 Thread handler = new Thread(new Handler(socket, this));
                 handler.start();
@@ -428,7 +468,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 in = new ObjectInputStream(this.socket.getInputStream());
                 Connection connection = new Connection(socket, in, out);
 
-                while (!socket.isClosed()) {
+                while (!socket.isClosed() && !Thread.interrupted()) {
                     // receiving an action string from the broker
                     String action = in.readUTF();
                     // if the requested action is a pull action
@@ -510,6 +550,17 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                         }
                         out.writeInt(exitCode);
                         out.flush();
+                    } else if (action.equals("brokerChange")) {
+                        Broker broker = (Broker) in.readObject();
+                        HashSet<String> hashtags = (HashSet<String>) in.readObject();
+
+                        synchronized (publisher) {
+                            // Remove the broker from the list
+                            publisher.getBrokers().remove(broker);
+
+                            // Find new broker
+                            hashtags.forEach(hashtag -> publisher.notifyBrokersForHashTags(hashtag, true));
+                        }
                     } else if (action.equals("end")) {
                         break;
                     }
@@ -519,6 +570,8 @@ public class Publisher extends AppNode implements Runnable, Serializable {
                 socket.close();
             } catch (IOException io) {
                 System.out.println(TAG + "Error in input or output: " + io.getMessage());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }
