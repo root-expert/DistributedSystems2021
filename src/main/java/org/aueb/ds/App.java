@@ -107,7 +107,11 @@ public class App {
                                             continue;
                                         break;
                                     }
-                                    subscribed = consumer.subscribe(consumer.findBroker(topic), topic);
+                                    Broker selected;
+                                    synchronized (consumer) {
+                                        selected = consumer.findBroker(topic);
+                                    }
+                                    subscribed = consumer.subscribe(selected, topic);
 
                                     if (!subscribed) {
                                         System.out.print(
@@ -134,7 +138,11 @@ public class App {
                                     System.out.println("There was no input, canceling...");
                                     continue;
                                 }
-                                consumer.unsubscribe(consumer.findBroker(topic), topic);
+                                Broker selected;
+                                synchronized (consumer) {
+                                    selected = consumer.findBroker(topic);
+                                }
+                                consumer.unsubscribe(selected, topic);
                             } else if (ans == 3) {
                                 File cwd = new File(System.getProperty("user.dir"));
                                 for (File file : cwd.listFiles()) {
@@ -168,7 +176,6 @@ public class App {
                                 }
                                 publisher.removeVideo(filename);
                             } else {
-                                System.out.println("Exiting..");
                                 System.exit(0);
                                 break;
                             }

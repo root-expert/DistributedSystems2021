@@ -252,18 +252,16 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     public Broker findBroker(String topic) {
         Broker selected = null;
 
-        synchronized (this) {
-            for (Broker broker : hashtagInfo.keySet()) {
-                if (hashtagInfo.get(broker).contains(topic)) {
-                    selected = broker;
-                }
+        for (Broker broker : hashtagInfo.keySet()) {
+            if (hashtagInfo.get(broker).contains(topic)) {
+                selected = broker;
             }
+        }
 
-            if (selected == null) {
-                System.out.println(TAG + "Couldn't find broker. Picking a random one");
-                int randomIdx = new Random().nextInt(hashtagInfo.size());
-                selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
-            }
+        if (selected == null) {
+            System.out.println(TAG + "Couldn't find broker. Picking a random one");
+            int randomIdx = new Random().nextInt(hashtagInfo.size());
+            selected = (Broker) hashtagInfo.keySet().toArray()[randomIdx];
         }
         return selected;
     }
