@@ -99,15 +99,6 @@ public class Publisher extends AppNode implements Runnable, Serializable {
         }
         // remove the video from the publisher's video list
         channelName.userVideoFilesMap.remove(actualName);
-        File cwd = new File(System.getProperty("user.dir"));
-        for (File video : cwd.listFiles()) {
-            if (video.getName().contains(".mp4")
-                    && video.getName().replace(".mp4", "").split("#")[0].equals(actualName)) {
-                video.renameTo(new File(video.getName().replace(".mp4", ".removed")));
-                return;
-            }
-        }
-        System.out.println(TAG + "The video did not exist.");
     }
 
     /**
