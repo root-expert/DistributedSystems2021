@@ -10,7 +10,7 @@
 
 ### Πως να τρέξει:
 1. Ανοίξτε το τοπικό Terminal
-2. Τρέξτε την εντολή `grdle task build`
+2. Τρέξτε την εντολή `gradle task build`
 3. Δημιουργήστε το ShadowJar με  `gradle shadowjar`.
    
    Το jar artifact βρίσκεται στο φάκελο /build/libs/.
