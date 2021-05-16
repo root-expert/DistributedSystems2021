@@ -270,12 +270,13 @@ public class Consumer extends AppNode implements Runnable, Serializable {
     private void cleanup() {
         // Find which broker is responsible for every subscribed topic
         HashSet<Broker> registeredBrokers = new HashSet<>();
+        ArrayList<String> cloneSubscribedItems = (ArrayList<String>) subscribedItems.clone();
 
         synchronized (this) {
-            subscribedItems.forEach(topic -> registeredBrokers.add(findBroker(topic)));
+            cloneSubscribedItems.forEach(topic -> registeredBrokers.add(findBroker(topic)));
 
             // Unsubscribe from every topic
-            subscribedItems.forEach(topic -> unsubscribe(findBroker(topic), topic));
+            cloneSubscribedItems.forEach(topic -> unsubscribe(findBroker(topic), topic));
         }
 
         // Unregister from every broker

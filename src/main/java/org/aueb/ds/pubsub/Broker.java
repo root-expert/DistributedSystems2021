@@ -225,8 +225,8 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 connection.out.writeObject(brokerAssociatedHashtags.get(this));
                 connection.out.flush();
 
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (IOException ignored) {
+                // Ignore. Consumer may go down
             } finally {
                 disconnect(connection);
             }
