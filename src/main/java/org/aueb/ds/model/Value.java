@@ -3,7 +3,7 @@ package org.aueb.ds.model;
 import java.io.Serializable;
 import java.util.HashSet;
 
-public class Value implements Serializable, Comparable<Value> {
+public class Value implements Serializable {
 
     public VideoFile videoFile;
 
@@ -29,16 +29,5 @@ public class Value implements Serializable, Comparable<Value> {
      * Default Constructor
      */
     public Value() {
-    }
-
-
-    @Override
-    /**
-     * Compares Value objects based on videoName.
-     *
-     * @param v The Value object to compare to
-     */
-    public int compareTo(Value v) {
-        return this.videoFile.videoName.compareTo(v.videoFile.videoName);
     }
 }
