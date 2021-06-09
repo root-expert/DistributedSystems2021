@@ -19,8 +19,8 @@ import java.util.Objects;
 
 public class Broker implements Node, Serializable, Runnable, Comparable<Broker> {
 
-    protected BrokerConfig config;
-    protected String hash;
+    public BrokerConfig config;
+    public String hash;
 
     private final HashSet<Consumer> registeredUsers = new HashSet<>();
     private final HashSet<Publisher> registeredPublishers = new HashSet<>();
