@@ -51,7 +51,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param filename the video file name to be removed(either the video name or
      *                 the .mp4 file name)
      */
-    public synchronized void removeVideo(String filename) {
+    public synchronized boolean removeVideo(String filename) {
     }
 
     /**
