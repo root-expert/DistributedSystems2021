@@ -1,16 +1,10 @@
 package org.aueb.ds;
 
-import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.model.config.BrokerConfig;
 import org.aueb.ds.pubsub.Broker;
-import org.aueb.ds.pubsub.consumer.Consumer;
-import org.aueb.ds.pubsub.publisher.Publisher;
 import org.aueb.ds.util.ConfigParser;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class App {
 
@@ -38,7 +32,7 @@ public class App {
                 brokerThread.setName("broker-thread");
                 brokerThread.start();
                 break;
-            case "node":
+            /*case "node":
                 AppNodeConfig appNodeConfig;
                 try {
                     appNodeConfig = new ConfigParser().parseConfig("appnode.yml", AppNodeConfig.class);
@@ -199,7 +193,7 @@ public class App {
                 } catch (InterruptedException ignored) {
 
                 }
-                break;
+                break;*/
             default:
                 System.out.println("Invalid arguments");
                 break;

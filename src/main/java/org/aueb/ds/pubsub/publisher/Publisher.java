@@ -42,7 +42,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *
      * @param fileName the name of the .mp4 video file
      */
-    public synchronized void addVideo(String fileName) {
+    public synchronized void addVideo(String fileName, String hashtags) {
     }
 
     /**
@@ -52,6 +52,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      *                 the .mp4 file name)
      */
     public synchronized boolean removeVideo(String filename) {
+        return false;
     }
 
     /**
@@ -109,7 +110,7 @@ public class Publisher extends AppNode implements Runnable, Serializable {
      * @param filename The filename to open.
      * @return An ArrayList with all the chunks.
      */
-    private ArrayList<Value> generateChunks(String filename) {
+    private ArrayList<Value> generateChunks(String filename, String hashtags) {
         return null;
     }
 
