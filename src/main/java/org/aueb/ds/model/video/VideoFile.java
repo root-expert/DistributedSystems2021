@@ -1,4 +1,4 @@
-package org.aueb.ds.model;
+package org.aueb.ds.model.video;
 
 import java.io.Serializable;
 import java.util.HashSet;

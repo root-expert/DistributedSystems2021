@@ -1,13 +1,13 @@
-package org.aueb.ds.model;
+package org.aueb.ds.pubsub;
 
-import org.aueb.ds.pubsub.Broker;
+import org.aueb.ds.model.pubsub.Connection;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 public interface Node {
 
-    void init();
+    boolean init();
 
     ArrayList<Broker> getBrokers();
 

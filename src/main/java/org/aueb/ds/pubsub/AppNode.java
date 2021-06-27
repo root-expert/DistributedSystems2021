@@ -1,7 +1,6 @@
 package org.aueb.ds.pubsub;
 
-import org.aueb.ds.model.Connection;
-import org.aueb.ds.model.Node;
+import org.aueb.ds.model.pubsub.Connection;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,8 +16,8 @@ public class AppNode implements Node {
     }
 
     @Override
-    public void init() {
-
+    public boolean init() {
+        return true;
     }
 
     @Override

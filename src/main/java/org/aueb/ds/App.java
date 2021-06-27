@@ -3,8 +3,8 @@ package org.aueb.ds;
 import org.aueb.ds.model.config.AppNodeConfig;
 import org.aueb.ds.model.config.BrokerConfig;
 import org.aueb.ds.pubsub.Broker;
-import org.aueb.ds.pubsub.Consumer;
-import org.aueb.ds.pubsub.Publisher;
+import org.aueb.ds.pubsub.consumer.Consumer;
+import org.aueb.ds.pubsub.publisher.Publisher;
 import org.aueb.ds.util.ConfigParser;
 
 import java.io.BufferedReader;
@@ -49,8 +49,8 @@ public class App {
                 }
 
                 // start Publisher, Consumer threads
-                Publisher publisher = new Publisher(appNodeConfig);
-                Consumer consumer = new Consumer(appNodeConfig);
+                Publisher publisher = new Publisher();
+                Consumer consumer = new Consumer();
 
                 Thread pubThread = new Thread(publisher);
                 Thread consThread = new Thread(consumer);

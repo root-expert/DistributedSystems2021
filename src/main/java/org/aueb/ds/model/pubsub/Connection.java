@@ -1,4 +1,4 @@
-package org.aueb.ds.model;
+package org.aueb.ds.model.pubsub;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

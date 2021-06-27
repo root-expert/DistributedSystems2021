@@ -1,9 +1,10 @@
 package org.aueb.ds.pubsub;
 
-import org.aueb.ds.model.Connection;
-import org.aueb.ds.model.Node;
-import org.aueb.ds.model.Value;
 import org.aueb.ds.model.config.BrokerConfig;
+import org.aueb.ds.model.pubsub.Connection;
+import org.aueb.ds.model.video.Value;
+import org.aueb.ds.pubsub.consumer.Consumer;
+import org.aueb.ds.pubsub.publisher.Publisher;
 import org.aueb.ds.util.Hashing;
 
 import java.io.IOException;
@@ -54,10 +55,12 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
     }
 
     @Override
-    public void init() {
+    public boolean init() {
         this.hash = new Hashing().md5Hash(config.getIp() + config.getPort());
 
         brokerAssociatedHashtags.put(this, new HashSet<>());
+
+        return true;
     }
 
     /**
@@ -426,11 +429,11 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
         new Thread(brokerConnection).start();
 
         // If the JVM is shutting down call cleanup()
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        /*Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println();
             System.out.println(TAG + "Shutting down gracefully...");
             cleanup();
-        }));
+        }));*/
 
         try {
             ServerSocket serverSocket = new ServerSocket(config.getPort());
@@ -542,6 +545,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             }
                         }
                     } else if (action.equals("subscribe")) {
+                        System.out.println("Recieved subscribe");
                         // Read the consumer object and the topic
                         Consumer subscriber = (Consumer) in.readObject();
                         String topic = in.readUTF();
@@ -671,6 +675,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                 socket.close();
             } catch (ClassNotFoundException cf) {
                 System.out.println(TAG + "Error: invalid cast" + cf.getMessage());
+                cf.printStackTrace();
             } catch (NullPointerException nu) {
                 System.out
                         .println(TAG + "Error: Inappropriate connection object, connection failed " + nu.getMessage());
