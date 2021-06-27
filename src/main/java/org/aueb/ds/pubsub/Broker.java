@@ -98,6 +98,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                     connection.out.writeUTF(topic);
                     connection.out.flush();
                     int exitCode = connection.in.readInt();
+                    System.out.println("after exit code");
                     if (exitCode == 0) {
                         pull(pu, topic);
                     }
@@ -545,7 +546,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                             }
                         }
                     } else if (action.equals("subscribe")) {
-                        System.out.println("Recieved subscribe");
+                        System.out.println("Received subscribe");
                         // Read the consumer object and the topic
                         Consumer subscriber = (Consumer) in.readObject();
                         String topic = in.readUTF();
@@ -623,6 +624,7 @@ public class Broker implements Node, Serializable, Runnable, Comparable<Broker> 
                         }
                         out.flush();
                     } else if (action.equals("register")) {
+                        System.out.println("received register");
                         Consumer consumer = (Consumer) in.readObject();
 
                         synchronized (broker) {
